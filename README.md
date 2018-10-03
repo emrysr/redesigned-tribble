@@ -1,7 +1,7 @@
 # redesigned-tribble
 **This is a frontend for the emoncms API**
 
-vuejs and bootstrap 4 version of the emoncms UI. This project has no server side scripting all JS,HTML and CSS
+vuejs and bootstrap 4 version of the emoncms UI. This project has no server side scripting all JS,HTML and CSS.
 
 # Install the project
 - `$ git clone git@github.com:emrysr/redesigned-tribble.git` clone my repo (or your fork)
