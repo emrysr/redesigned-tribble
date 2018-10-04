@@ -1,13 +1,22 @@
 <template>
-  <h1 class="display-1">{{msg}}</h1>
+  <h1 class="display-1">
+    {{ $t("message.inputs") }}:
+  </h1>
 </template>
 
 <script>
 export default {
   name: 'Feeds',
-  data () {
-    return {
-      msg: 'Inputs List'
+  i18n: { // `i18n` option, setup locale info for component
+    messages: {
+      en: { message: {
+        inputs: 'Inputs'
+      }
+      },
+      cy: { message: {
+        inputs: 'Mewnlifau'
+      }
+      }
     }
   }
 }

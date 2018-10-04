@@ -1,33 +1,37 @@
 <script>
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import Icons from '@/components/Icons'
+import 'bootstrap/dist/css/bootstrap.min.css'
 
 export default {
   name: 'App',
   components: {
     'Navbar': Navbar,
-    'Footer': Footer
-  },
-  data: function () {
-    return {
-      projectName: 'eMonCMS'
-    }
+    'Footer': Footer,
+    'Icons': Icons
   }
 }
 </script>
 
 <template>
   <div id="app">
-    <Navbar/>
-    <div class="container">
-      <router-view/>
-    </div>
-    <Footer/>
+    <main>
+      <Navbar/>
+      <div class="container">
+        <router-view/>
+      </div>
+      <Footer/>
+    </main>
+
+    <Icons/>
   </div>
+
 </template>
 
 <style>
 #app {
-  margin-top: 60px;
+  margin-top: 5em;
+  margin-bottom: 5em;
 }
 </style>

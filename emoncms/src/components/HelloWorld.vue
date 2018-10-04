@@ -1,5 +1,6 @@
+<!-- used as the base component to 'save-as' a new component -->
 <template>
-  <div class="hello">{{name}}</div>
+  <h1 class="hello">{{ $t('message.welcome') }} {{ msg }}</h1>
 </template>
 
 <script>
@@ -7,7 +8,19 @@ export default {
   name: 'HelloWorld',
   data () {
     return {
-      msg: 'Welcome to Your Vue.js App'
+      msg: ' to Your Vue.js App'
+    }
+  },
+  i18n: { // `i18n` option, setup locale info for component
+    messages: {
+      en: { message: {
+        welcome: 'Welcome'
+      }
+      },
+      cy: { message: {
+        welcome: 'Croeso'
+      }
+      }
     }
   },
   mounted () {

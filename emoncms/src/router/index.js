@@ -4,6 +4,7 @@ import Router from 'vue-router'
 import Login from '@/components/Login'
 import Inputs from '@/components/Inputs'
 import Feeds from '@/components/Feeds'
+import HelloWorld from '@/components/HelloWorld'
 
 Vue.use(Router)
 
@@ -11,17 +12,22 @@ export default new Router({
   routes: [
     {
       path: '/',
-      name: 'Login',
+      redirect: '/login'
+    },
+    {
+      path: '/dev',
+      component: HelloWorld
+    },
+    {
+      path: '/login',
       component: Login
     },
     {
       path: '/feeds',
-      name: 'Feeds',
       component: Feeds
     },
     {
       path: '/inputs',
-      name: 'Inputs',
       component: Inputs
     }
   ],

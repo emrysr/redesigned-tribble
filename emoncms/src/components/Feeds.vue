@@ -1,19 +1,202 @@
 <template>
-  <h1 class="display-1">{{msg}}</h1>
-</template>
+<div>
 
+  <section>
+    <h1 class="display-1 d-sm-flex justify-content-between align-items-end">
+      {{ $t("message.feeds") }}:
+      <FeedlistToolbar />
+    </h1>
+  </section>
+
+  <div class="accordion">
+    <Node
+      v-for="node in nodes"
+      v-bind:key="node.name"
+      v-bind:node="node"
+    ></Node>
+  </div>
+
+</div>
+
+</template>
 <script>
+import FeedlistToolbar from '@/components/FeedlistToolbar'
+import FeedTooltip from '@/components/FeedTooltip'
+import Node from '@/components/Node'
+import axios from 'axios'
+import camelCase from 'camelcase'
+
 export default {
   name: 'Feeds',
+  components: {
+    'FeedlistToolbar': FeedlistToolbar,
+    'FeedTooltip': FeedTooltip,
+    'Node': Node
+  },
   data () {
     return {
-      msg: 'Feeds List'
+      msg: 'Feeds List',
+      response: null,
+      nodes: {},
+      engines: {
+        MYSQL: 0,
+        TIMESTORE: 1, // Depreciated
+        PHPTIMESERIES: 2,
+        GRAPHITE: 3, // Not included in core
+        PHPTIMESTORE: 4, // Depreciated
+        PHPFINA: 5,
+        PHPFIWA: 6,
+        VIRTUALFEED: 7, // Virtual feed , on demand post processing
+        MYSQLMEMORY: 8, // Mysql with MEMORY tables on RAM. All data is lost on shutdown
+        REDISBUFFER: 9, // (internal use only) Redis Read/Write buffer , for low write mode
+        CASSANDRA: 10 // Cassandra
+      }
     }
+  },
+  computed: {
+    getEngineName: function () {
+      return function (_id) {
+        let engineName = null
+        Object.entries(this.engines).forEach(function (value, id) {
+          if (id === parseInt(_id)) {
+            engineName = value[0]
+          }
+        })
+        return engineName
+      }
+    }
+  },
+  i18n: { // `i18n` option, setup locale info for component
+    messages: {
+      en: {
+        message: {
+          feeds: 'Feeds'
+        }
+      },
+      cy: {
+        message: {
+          feeds: 'Ffrwdau'
+        }
+      },
+      es: {
+        message: {
+          feeds: 'Feeds es'
+        }
+      },
+      fr: {
+        message: {
+          feeds: 'Feeds fr'
+        }
+      }
+    }
+  },
+  mounted () {
+    let that = this
+    axios
+      .get('http://localhost/emoncms/feed/list.json', {
+        params: {
+          apikey: 'cb9579be83678b89a5eb0faea08ad839'
+        }
+      })
+      .then(function (response) {
+        // map list of nodes to arrays grouped by "node.tag"
+        // with associated "feeds[]" as an array property
+        that.nodes = Object.values(response.data.reduce((result, {
+          id,
+          userid,
+          name,
+          datatype,
+          tag,
+          ispublic,
+          size,
+          engine,
+          processList,
+          unit,
+          time,
+          value,
+          // eslint-disable-next-line camelcase
+          start_time,
+          interval
+        }) => {
+          // Create new group
+          if (!result[tag]) {
+            result[tag] = {
+              tag,
+              id: camelCase(tag),
+              collapsed: false,
+              feeds: []
+            }
+          }
+          // Append to group
+          result[tag].feeds.push({
+            id,
+            userid,
+            name,
+            datatype,
+            tag,
+            ispublic,
+            size,
+            engine: that.getEngineName(engine),
+            processList,
+            unit,
+            time,
+            value,
+            start_time,
+            interval
+          })
+          return result
+        }, {}))
+        // console.log(JSON.parse(JSON.stringify(that.nodes)))
+      })
+      .catch(function (error) {
+        console.log(error)
+      })
+
+    this.$nextTick(() => {
+      let $ = global.$
+      $('body').tooltip({
+        selector: '[data-toggle="tooltip"]'
+      })
+
+      // add data-clicked="true" once popover shown
+      $('body').on('show.bs.popover', '[data-toggle="popover"]', function () {
+        this.dataset.clicked = 'true'
+      })
+      // remove data-clicked="true" once popover hidden
+      $('body').on('hide.bs.popover', '[data-toggle="popover"]', function () {
+        this.dataset.clicked = 'false'
+      })
+      // only allow one visible popover
+      $('[data-toggle="popover"]').on('click', function (event) {
+        if ('INPUT|LABEL'.split('|').indexOf(event.target.tagName) > -1) {
+          let input = event.target.tagName === 'INPUT' ? event.target : document.getElementById(event.target.getAttribute('for'))
+          let state = input.checked === true
+          input.checked = !state
+          $(input).trigger('change')
+          event.stopPropagation()
+        }
+        $('[data-toggle="popover"]').not(this).popover('hide')
+      })
+      // hide popovers when accordion hidden
+      $('.accordion').on('hide.bs.collapse', function () {
+        $(this).find('[data-toggle="popover"]').popover('hide')
+      })
+      // only show the graph on second click
+      // this allows popover to be visible for mobiles
+      $('body').on('click', '[data-toggle="popover"]', function (event) {
+        if (this.dataset.clicked === 'true') {
+          event.preventDefault()
+        } else {
+          alert('DEMO. Not going to graph page...')
+        }
+      })
+      $('body').on('click', '[data-action="close.popover"]', function () {
+        console.log('close', $(this).parents())
+        $(this).tooltip('hide').parents('.popover').popover('hide')
+      })
+    })
   }
 }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-
-</style>

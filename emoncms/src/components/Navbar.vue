@@ -1,40 +1,33 @@
 <template>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo03" aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
+  <nav class="navbar navbar-expand-md navbar-dark bg-primary fixed-top">
+    <div class="container">
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#mainNavbarToggler" aria-controls="mainNavbarToggler" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
-      <router-link to="/" class="navbar-brand">{{$parent.projectName}}</router-link>
+      <router-link to="/" class="navbar-brand">{{$appName}}</router-link>
+      <div class="collapse navbar-collapse" id="mainNavbarToggler">
+        <Nav />
 
-      <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
-        <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
-          <router-link v-for="routes in links"
-             v-bind:key="routes.id"
-             tag="li"
-             class="nav-item" :to="`${routes.page}`"><a :href="routes.page" class="nav-link">{{routes.title}}</a></router-link>
-        </ul>
-        <form class="form-inline my-2 my-lg-0">
-          <div class="input-group">
-            <input type="text" class="form-control" placeholder="Search" aria-label="Recipient's username" aria-describedby="button-addon2">
-            <div class="input-group-append">
-              <button class="btn btn-success">Search</button>
-            </div>
-          </div>
-        </form>
+        <Search />
+
+        <LocaleChanger class="ml-2" />
       </div>
-    </nav>
+    </div>
+  </nav>
 </template>
 
 <script>
+import LocaleChanger from '@/components/LocaleChanger'
+import Nav from '@/components/Nav'
+import Search from '@/components/Search'
+
 export default {
-  name: 'Navbar',
-  data: function () {
-    return {
-      links: [
-        {id: 1, page: '/feeds', title: 'Feeds'},
-        {id: 2, page: '/inputs', title: 'Inputs'}
-      ]
-    }
+  components: {
+    'LocaleChanger': LocaleChanger,
+    'Nav': Nav,
+    'Search': Search
   },
+  name: 'Navbar',
   mounted () {
     this.$nextTick(() => {
       global.$('.navbar').hide().fadeIn('slow')

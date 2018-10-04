@@ -21,7 +21,7 @@ export default {
   data: function () {
     return {
       links: [
-        {id: 1, page: '/', title: this.$parent.projectName}
+        {id: 1, page: '/', title: this.$appName}
       ]
     }
   }

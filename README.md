@@ -46,9 +46,11 @@ This project has theses dependancies (all now in the `package.json` file):
     "bootstrap": "^4.1.3",
     "jquery": "^3.3.1",
     "popper.js": "^1.14.4",
+    "tooltip.js": "^1.3.0",
 
 All added like this:
 - `npm install jquery --save`
+- `npm install tooltip.js --save`
 - `npm install popper.js --save`
 - `npm install bootstrap --save`
 
