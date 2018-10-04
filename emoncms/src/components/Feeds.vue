@@ -99,59 +99,31 @@ export default {
         }
       })
       .then(function (response) {
-        // map list of nodes to arrays grouped by "node.tag"
-        // with associated "feeds[]" as an array property
-        that.nodes = Object.values(response.data.reduce((result, {
-          id,
-          userid,
-          name,
-          datatype,
-          tag,
-          ispublic,
-          size,
-          engine,
-          processList,
-          unit,
-          time,
-          value,
-          // eslint-disable-next-line camelcase
-          start_time,
-          interval
-        }) => {
-          // Create new group
-          if (!result[tag]) {
-            result[tag] = {
-              tag,
-              id: camelCase(tag),
+        var nodes = {}
+        response.data.forEach(function (feed) {
+          // create array of nodes with array of feeds as a property of each node
+          feed.engine_name = that.getEngineName(feed.engine)
+          if (!nodes[feed.tag]) {
+            nodes[feed.tag] = {
+              tag: feed.tag,
+              id: camelCase(feed.tag),
               collapsed: false,
+              size: 0,
+              lastupdate: 0,
               feeds: []
             }
           }
-          // Append to group
-          result[tag].feeds.push({
-            id,
-            userid,
-            name,
-            datatype,
-            tag,
-            ispublic,
-            size,
-            engine: that.getEngineName(engine),
-            processList,
-            unit,
-            time,
-            value,
-            start_time,
-            interval
-          })
-          return result
-        }, {}))
-        // console.log(JSON.parse(JSON.stringify(that.nodes)))
+          nodes[feed.tag].size += parseInt(feed.size)
+          nodes[feed.tag].lastupdate = parseInt(feed.time) > nodes[feed.tag].lastupdate ? parseInt(feed.time) : nodes[feed.tag].lastupdate
+          nodes[feed.tag].feeds.push(feed)
+        })
+        that.nodes = Object.values(nodes)
+        // console.log(JSON.parse(JSON.stringify(Object.values(nodes))))
       })
       .catch(function (error) {
         console.log(error)
       })
-
+    /*
     this.$nextTick(() => {
       let $ = global.$
       $('body').tooltip({
@@ -195,8 +167,7 @@ export default {
         $(this).tooltip('hide').parents('.popover').popover('hide')
       })
     })
+*/
   }
 }
 </script>
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->

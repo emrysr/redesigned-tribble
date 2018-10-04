@@ -1,26 +1,23 @@
 <template>
-  <li class="list-group-item w-100 d-flex justify-content-between text-body"
+  <li class="list-group-item pl-0"
     data-toggle="popover"
     :title="feed.name"
     data-content2='<FeedTooltip/>'
     data-content='abcdef'
     >
-    <div class="d-flex justify-content-between align-items-start col-sm-7 col-md-5 pl-2 pr-3">
-      <div class="row no-gutters col-5">
-        <div class="col-2 custom-control custom-checkbox">
+    <div class="row">
+      <div class="col col-sm-6 col-md-4 col-lg-3 row no-gutters">
+        <div class="custom-control custom-checkbox">
           <input :id="'select-feed-' + feed.id" class="custom-control-input" type="checkbox" value="option1" aria-label="...">
           <label :for="'select-feed-' + feed.id" class="custom-control-label position-absolute"></label>
         </div>
-        <span class="col-10 text-truncate d-inline-block">{{feed.name}}</span>
+        <div class="text-truncate d-inline-block pl-3">{{feed.name}}</div>
       </div>
-      <span class="d-none d-md-inline-block col-1">
-        <Icon v-bind:icon="privateIcon"/>
-      </span>
-      <span class="d-none d-lg-inline-block col-3 text-truncate">{{feed.engine}}</span>
-      <span>{{ prettySize(feed.time) }}</span>
-    </div>
-    <div class="pr-3">
-      <span>{{ relativeTime(feed.time) }}</span>
+
+      <div class="d-none d-md-block px-1"><Icon v-bind:icon="privateIcon"/></div>
+      <div class="col-2 d-none d-lg-inline-block text-truncate">{{feed.engine_name}}</div>
+      <div class="col-sm-3 px-sm-2 px-md-4 d-none d-sm-block">{{ feed.size | prettySize }}</div>
+      <div class="col-sm-3 d-none d-sm-block text-truncate ml-auto text-right">{{ feed.time | relativeTime }}</div>
     </div>
   </li>
 </template>
@@ -31,26 +28,24 @@ import pretty from 'prettysize'
 import moment from 'moment'
 
 export default {
+  name: 'NodeItem',
+  props: ['feed', 'node'],
   components: {
     'Icon': Icon
   },
   computed: {
     privateIcon: function () {
-      return this.feed.private ? 'lock-locked' : 'lock-unlocked'
-    },
-    prettySize: function () {
-      return function (size) {
-        return pretty(size)
-      }
-    },
-    relativeTime: function () {
-      return function (time) {
-        return !time ? 'n/a' : moment.unix(time).fromNow()
-      }
+      return this.feed.ispublic ? 'lock-unlocked' : 'lock-locked'
     }
   },
-  props: ['feed', 'node'],
-  name: 'NodeItem',
+  filters: {
+    relativeTime (time) {
+      return !time ? 'n/a' : moment.unix(time).fromNow()
+    },
+    prettySize (bytes) {
+      return pretty(bytes)
+    }
+  },
   mounted () {
     this.$nextTick(() => {
       let $ = global.$
@@ -65,3 +60,11 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.list-group-item{overflow:hidden}
+.custom-control-label::after,
+.custom-control-label::before{
+  margin-left:.75em;
+}
+</style>

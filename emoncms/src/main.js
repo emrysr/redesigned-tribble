@@ -60,3 +60,8 @@ new Vue({
   components: { App },
   template: '<App/>'
 })
+
+// @todo: add touch/swipe actions
+// https://github.com/vuejs/vue-touch
+// var VueTouch = require('vue-touch')
+// Vue.use(VueTouch)

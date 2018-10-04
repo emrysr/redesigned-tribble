@@ -1,20 +1,16 @@
 <template>
   <div class="card dropup">
-    <div class="card-header" :id="'heading' + node.id">
+    <div class="card-header p-0" :id="'heading' + node.id">
       <a href="#"
-        :class="'btn btn-link btn-block dropdown-toggle' + (node.collapsed ? ' collapsed' : '')"
+        :class="'dropdown-toggle text-body py-3 pl-4 pr-3 row' + (node.collapsed ? ' collapsed' : '')"
         data-toggle="collapse"
         :data-target="'#collapse' + node.id"
         :aria-controls="'collapse' + node.id"
         :aria-expanded="node.collapsed"
       >
-        <div class="w-100 d-flex justify-content-between">
-          <div class="d-flex justify-content-between col-sm-7 col-md-5">
-            <h5 class="mb-0">{{node.tag}}:</h5>
-            <span>{{ nodeMaxSize(node) }}</span>
-          </div>
-          <span>{{ nodeLastUpdate(node) }}</span>
-        </div>
+        <h5 class="col col-sm-5 col-md-4 col-lg-5 mb-0 ml-3 ml-sm-4">{{node.tag}}:</h5>
+        <div class="col-sm-3 d-none d-sm-block">{{ node.size | prettySize }}</div>
+        <div class="col-sm-3 d-none d-sm-block text-right ml-auto text-truncate">{{ node.lastupdate | relativeTime }}</div>
       </a>
     </div>
 
@@ -44,31 +40,20 @@ export default {
     'NodeItem': NodeItem
   },
   props: ['node'],
-  computed: {
-    nodeMaxSize: function () {
-      return function (node) {
-        var size = 0
-        node.feeds.forEach(function (feed) {
-          size += parseInt(feed.size)
-        })
-        return pretty(size)
-      }
+  filters: {
+    relativeTime (time) {
+      return !time ? 'n/a' : moment.unix(time).fromNow()
     },
-    nodeLastUpdate: function () {
-      return function (node) {
-        let max = 0
-        node.feeds.forEach(function (item) {
-          max = parseInt(item.time) > max ? parseInt(item.time) : max
-        })
-        return !max ? 'n/a' : moment.unix(max).fromNow()
-      }
+    prettySize (bytes) {
+      return pretty(bytes)
     }
   }
 }
 </script>
 
 <style>
-  .accordion .card .btn{color:inherit}
+  .accordion .card .card-header{overflow:hidden}
+  .accordion .card .a{color:inherit}
   .accordion .card .list-group-item[data-clicked="true"]{
     background: #bee5eb!important;
     color: #212529!important;
@@ -76,13 +61,14 @@ export default {
   .accordion .dropdown-toggle:after{
     margin-top:.5em;
     position:absolute;
-    left: 1em;
-    top: 1.5em;
+    left: .8em;
+    top: 1em;
   }
   .accordion .list-group-item{
     cursor: pointer
   }
-  .accordion .card:last-child .list-group-item:last-child{
-    border-bottom:1px solid #FAFAFA
+  .dropdown-toggle.collapsed:after{
+    transform: rotate(180deg)
   }
+
 </style>

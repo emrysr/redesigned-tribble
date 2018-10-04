@@ -57,6 +57,14 @@ export default {
     selectAll: function (event) {
       console.log('selectAll()', event.type)
     }
+  },
+  mounted () {
+    this.$nextTick(() => {
+      let $ = global.$
+      $('body').tooltip({
+        selector: '[data-toggle="tooltip"]'
+      })
+    })
   }
 }
 </script>
