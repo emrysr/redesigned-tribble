@@ -1,12 +1,14 @@
 <template>
   <div class="card dropup">
     <div class="card-header p-0" :id="'heading' + node.id">
+      <!-- @todo: check if any feed within the node is selected, OPEN ACCORDION IF CONTAINED ITEM IS SELECTED-->
       <a href="#"
         :class="'dropdown-toggle text-body py-3 pl-4 pr-3 row' + (node.collapsed ? ' collapsed' : '')"
         data-toggle="collapse"
         :data-target="'#collapse' + node.id"
         :aria-controls="'collapse' + node.id"
         :aria-expanded="node.collapsed"
+        @click="node.collapsed = !node.collapsed"
       >
         <h5 class="col col-sm-5 col-md-4 col-lg-5 mb-0 ml-3 ml-sm-4">{{node.tag}}:</h5>
         <div class="col-sm-3 d-none d-sm-block">{{ node.size | prettySize }}</div>

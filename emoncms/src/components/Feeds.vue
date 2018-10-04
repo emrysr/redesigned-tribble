@@ -4,7 +4,7 @@
   <section>
     <h1 class="display-1 d-sm-flex justify-content-between align-items-end">
       {{ $t("message.feeds") }}:
-      <FeedlistToolbar />
+      <FeedlistToolbar :nodes="nodes"/>
     </h1>
   </section>
 
@@ -103,6 +103,7 @@ export default {
         response.data.forEach(function (feed) {
           // create array of nodes with array of feeds as a property of each node
           feed.engine_name = that.getEngineName(feed.engine)
+          feed.selected = false
           if (!nodes[feed.tag]) {
             nodes[feed.tag] = {
               tag: feed.tag,
