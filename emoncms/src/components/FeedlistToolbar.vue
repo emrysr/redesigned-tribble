@@ -1,8 +1,23 @@
 <template>
     <span class="btn-toolbar d-flex justify-content-end" role="toolbar" aria-label="feed buttons">
       <span class="btn-group mt-1 btn-group-lg" role="group" aria-label="Basic example">
-        <button type="button" @click="collapseAll" id="collapse-all" class="btn btn-outline-primary" :title="$t('message.collapse_help')" data-toggle="tooltip">{{ oneCollapsed || !allExpanded ? $t('message.collapse') : $t('message.expand') }}</button>
-        <button type="button" @click="selectAll" id="select-all" class="btn btn-outline-primary" :title="$t('message.selectall_help')" data-toggle="tooltip">{{ $t('message.selectAll') }}</button>
+        <button type="button" 
+          @click="collapseAll" id="collapse-all"
+          class="btn btn-outline-primary"
+          :title="$t('message.collapse_help')" 
+          data-toggle="tooltip"
+        >
+          {{ oneCollapsed || !allExpanded ? $t('message.collapse') : $t('message.expand') }}
+        </button>
+        <button type="button"
+          @click="selectAll"
+          id="select-all"
+          class="btn btn-outline-primary"
+          :title="$t('message.selectall_help')"
+          data-toggle="tooltip"
+        >
+          {{ (selected>0 ? '('+selected+') ': '') + (allSelected ? $t('message.deSelectAll') : $t('message.selectAll')) }}
+        </button>
       </span>
       <span id="feed-action-buttons" class="btn-group ml-1 mt-1" role="group" aria-label="Feed Specific actions">
         <button type="button" class="btn" :class="{'btn-info':oneSelected}" :disabled="!oneSelected" title="Edit selected feeds" data-toggle="tooltip"><Icon icon="edit" /></button>
@@ -33,6 +48,7 @@ export default {
         collapse_help: 'Show/Hide all feeds',
         selectall_help: 'Select/Unselect all feeds',
         selectAll: 'Select All',
+        deSelectAll: 'Unselect All',
         expand: 'Expand',
         collapse: 'Collapse'
       }
@@ -41,6 +57,7 @@ export default {
         collapse_help: 'Dangos/Cuddio pôb ffrwd gan newid maint y node',
         selectall_help: 'Dewiwch neu dad ddewiswch pôb ffrwd cyn gwenud gwaith arnom',
         selectAll: 'Dewis pôb un',
+        deSelectAll: 'Dad-ddewis pôb un',
         expand: 'Agor',
         collapse: 'Cau'
       }
@@ -91,6 +108,17 @@ export default {
         }
       }
       return false
+    },
+    selected: function(){
+      let total = 0
+      if (this.nodes) {
+        for (let node in this.nodes) {
+          for (let feed in this.nodes[node].feeds) {
+            if (this.nodes[node].feeds[feed].selected) total ++
+          }
+        }
+      }
+      return total
     }
   },
   methods: {
