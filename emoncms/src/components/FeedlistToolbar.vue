@@ -1,10 +1,10 @@
 <template>
     <span class="btn-toolbar d-flex justify-content-end" role="toolbar" aria-label="feed buttons">
       <span class="btn-group mt-1 btn-group-lg" role="group" aria-label="Basic example">
-        <button type="button" 
+        <button type="button"
           @click="collapseAll" id="collapse-all"
           class="btn btn-outline-primary"
-          :title="$t('message.collapse_help')" 
+          :title="$t('message.collapse_help')"
           data-toggle="tooltip"
         >
           {{ oneCollapsed || !allExpanded ? $t('message.collapse') : $t('message.expand') }}
@@ -109,12 +109,12 @@ export default {
       }
       return false
     },
-    selected: function(){
+    selected: function () {
       let total = 0
       if (this.nodes) {
         for (let node in this.nodes) {
           for (let feed in this.nodes[node].feeds) {
-            if (this.nodes[node].feeds[feed].selected) total ++
+            if (this.nodes[node].feeds[feed].selected) total++
           }
         }
       }

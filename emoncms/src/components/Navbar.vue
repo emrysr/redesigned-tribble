@@ -5,7 +5,7 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       <router-link to="/" class="navbar-brand">
-        <small class="pr-2 position-absolute badge badge-rounded badge-light" style="margin-left:-2em">
+        <small class="pr-2 position-absolute badge badge-rounded badge-info" style="margin-left:-2em">
           <span class="d-block d-sm-none">xs</span>
           <span class="d-none d-sm-block d-md-none">sm</span>
           <span class="d-none d-md-block d-lg-none">md</span>
@@ -19,7 +19,7 @@
 
         <Search />
 
-        <LocaleChanger class="ml-2" />
+        <LocaleChanger class="ml-0 ml-sm-2" />
       </div>
     </div>
   </nav>

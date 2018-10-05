@@ -1,6 +1,6 @@
 <template>
     <div class="jumbotron py-4">
-    <h1 class="display-2">{{$t("message.hello") + $appName}}</h1>
+    <h1 class="display-4">{{$t("message.hello") + $appName}}</h1>
     <p class="lead">{{lead}}</p>
     <hr class="my-4">
     <p>{{intro}}</p>

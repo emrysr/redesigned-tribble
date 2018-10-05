@@ -3,9 +3,7 @@
     :title="feed.name"
     :class="{'bg-info': feed.selected,'text-light': feed.selected}"
     data-toggle="popover"
-    data-content2='<FeedTooltip/>'
-    data-content='abcdef'
-    >
+  >
     <div class="row">
       <div class="col col-sm-6 col-md-4 col-lg-3 row no-gutters">
         <div class="custom-control custom-checkbox">
@@ -25,6 +23,7 @@
 
 <script>
 import Icon from '@/components/Icon'
+import FeedTooltip from '@/components/FeedTooltip'
 import pretty from 'prettysize'
 import moment from 'moment'
 
@@ -32,7 +31,8 @@ export default {
   name: 'NodeItem',
   props: ['feed', 'node'],
   components: {
-    'Icon': Icon
+    'Icon': Icon,
+    'FeedTooltip': FeedTooltip
   },
   computed: {
     privateIcon: function () {
@@ -54,8 +54,9 @@ export default {
       $('body').popover({
         selector: '[data-toggle="popover"]',
         placement: 'top',
-        html: true
+        html: true,
         // template: '<FeedTooltip/>'
+        content: 'def'
       })
     })
   }

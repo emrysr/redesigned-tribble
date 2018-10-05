@@ -2,7 +2,7 @@
 <div>
 
   <section>
-    <h1 class="display-1 d-sm-flex justify-content-between align-items-end">
+    <h1 class="display-4 d-sm-flex justify-content-between align-items-end">
       {{ $t("message.feeds") }}:
       <FeedlistToolbar :nodes="nodes"/>
     </h1>
@@ -16,6 +16,8 @@
     ></Node>
   </div>
 
+  <div class="alert alert-danger" v-for="error in errors" v-bind:key="error">{{ error }}</div class="alert alert-danger">
+  <button v-if="errors.length>0" @click="getFeedData()" class="btn btn-lg btn-primary">Retry</button>
 </div>
 
 </template>
@@ -38,6 +40,7 @@ export default {
       msg: 'Feeds List',
       response: null,
       nodes: {},
+      errors: [],
       engines: {
         MYSQL: 0,
         TIMESTORE: 1, // Depreciated
@@ -90,40 +93,63 @@ export default {
       }
     }
   },
-  mounted () {
-    let that = this
-    axios
-      .get('http://localhost/emoncms/feed/list.json', {
-        params: {
-          apikey: 'cb9579be83678b89a5eb0faea08ad839'
-        }
-      })
-      .then(function (response) {
-        var nodes = {}
-        response.data.forEach(function (feed) {
-          // create array of nodes with array of feeds as a property of each node
-          feed.engine_name = that.getEngineName(feed.engine)
-          feed.selected = false
-          if (!nodes[feed.tag]) {
-            nodes[feed.tag] = {
-              tag: feed.tag,
-              id: camelCase(feed.tag),
-              collapsed: false,
-              size: 0,
-              lastupdate: 0,
-              feeds: []
-            }
+  methods: {
+    getFeedData: function () {
+      this.errors = []
+      let that = this
+      axios
+        .get('http://bde391cd.ngrok.io/emoncms/feed/list.json', {
+          params: {
+            apikey: 'cb9579be83678b89a5eb0faea08ad839'
           }
-          nodes[feed.tag].size += parseInt(feed.size)
-          nodes[feed.tag].lastupdate = parseInt(feed.time) > nodes[feed.tag].lastupdate ? parseInt(feed.time) : nodes[feed.tag].lastupdate
-          nodes[feed.tag].feeds.push(feed)
         })
-        that.nodes = Object.values(nodes)
-        // console.log(JSON.parse(JSON.stringify(Object.values(nodes))))
+        .then(function (response) {
+          var nodes = {}
+          response.data.forEach(function (feed) {
+            // create array of nodes with array of feeds as a property of each node
+            feed.engine_name = that.getEngineName(feed.engine)
+            feed.selected = false
+            if (!nodes[feed.tag]) {
+              nodes[feed.tag] = {
+                tag: feed.tag,
+                id: camelCase(feed.tag),
+                collapsed: false,
+                size: 0,
+                lastupdate: 0,
+                feeds: []
+              }
+            }
+            nodes[feed.tag].size += parseInt(feed.size)
+            nodes[feed.tag].lastupdate = parseInt(feed.time) > nodes[feed.tag].lastupdate ? parseInt(feed.time) : nodes[feed.tag].lastupdate
+            nodes[feed.tag].feeds.push(feed)
+          })
+          that.nodes = Object.values(nodes)
+          // console.log(JSON.parse(JSON.stringify(Object.values(nodes))))
+        })
+        .catch(function (error) {
+          that.errors.push(error.response || 'Error in connecting to your local emonCMS')
+
+          if (error.response) {
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            that.errors.push(error.response.data)
+            that.errors.push(error.response.status)
+            that.errors.push(error.response.headers)
+          } else if (error.request) {
+            // The request was made but no response was received
+            // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+            // http.ClientRequest in node.js
+            that.errors.push(error.request)
+          } else {
+            // Something happened in setting up the request that triggered an Error
+            that.errors.push('Error', error.message)
+          }
+          that.errors.push(error.config)
       })
-      .catch(function (error) {
-        console.log(error)
-      })
+    }
+  },
+  mounted () {
+    this.getFeedData()
     /*
     this.$nextTick(() => {
       let $ = global.$
