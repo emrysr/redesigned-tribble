@@ -1,8 +1,8 @@
-import sys, time
+import sys, time, logging, json
 import paho.mqtt.client as paho
 import requests as requests
 
-DEBUG_ON = True
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 clientId = "user487"
 broker = "mqtt.emrys.cymru"
@@ -11,8 +11,9 @@ subTopic = "request"
 retry = 5
 delay = 2
 counter = 0
+client = None
 
-client = False
+logging.debug("Settings: %s, %s, %s, %s", clientId, broker, pubTopic, subTopic)
 
 def on_connect(client, obj, flags, rc):
     """ function called when connection is made to mqtt server 
@@ -25,17 +26,17 @@ def on_connect(client, obj, flags, rc):
     
     """
     global counter, retry, delay
-    debug("Connected. Code: " + str(rc))
+    logging.info("Connected...")
+    logging.debug(paho.connack_string(rc))
+
     if rc == 0:
-        debug("Connection Accepted")
         counter = 0
-        debug("Subscribing to ", subTopic)
+        logging.debug("Subscribing to \"%s\"", subTopic)
         client.subscribe(subTopic) #subscribe
     else:
-        debug("Error: %s" % rc in error_codes)
         if counter < retry:
-            debug("Reconnecting...")
-            debug("Waiting %s before retry" % delay)
+            logging.debug("Reconnecting...")
+            logging.debug("Waiting %s before retry" % delay)
             time.sleep(delay)
             connect()
         else:
@@ -51,7 +52,7 @@ def on_message(client, obj, msg):
         msg - an instance of MQTTMessage. This is a class with members topic, payload, qos, retain
     
     """
-    debug(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
+    logging.debug(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
     call_api(msg)
     pass
 
@@ -64,7 +65,7 @@ def on_publish(client, obj, mid):
         mid -- message identifier
     
     """
-    debug("Message ID: " + str(mid))
+    logging.debug("Message ID: " + str(mid))
     pass
 
 def on_subscribe(client, obj, mid, granted_qos):
@@ -77,7 +78,7 @@ def on_subscribe(client, obj, mid, granted_qos):
         granted_qos -- list of integers that give the QoS level the broker has granted
     
     """
-    debug("Subscribed: %s %s" % str(mid), str(granted_qos))
+    logging.debug("Subscribed: %s %s" % str(mid), str(granted_qos))
 
 def on_disconnect(client, userdata,rc=0):
     """ function called when the client disconnects from the broker
@@ -89,15 +90,15 @@ def on_disconnect(client, userdata,rc=0):
 
     """
     global counter, delay
-    debug("Disconnected (%s)" % counter)
+    logging.debug("Disconnected (%s)" % counter)
     if counter < retry:
-        debug("Reconnecting...")
-        debug("Waiting %s before retry" % delay)
+        logging.info("Reconnecting...")
+        logging.debug("Waiting %s before retry" % delay)
         time.sleep(delay)
         connect()
     else:
         client.loop_stop()
-        debug("Write to error log")
+        logging.debug("Write to error log")
         exit()
 ###
 
@@ -108,10 +109,9 @@ def call_api(msg):
         msg -- the response body from the ajax request
 
     """
-    debug("Sending API call")
+    logging.debug("Sending API call")
     request = msg.payload.decode("utf-8")
-    r = requests.get(request)
-    send_response(r.json())
+    send_response(requests.get(request))
 
 def send_response(response):
     """ Forward the API call response (JSON) to another 
@@ -121,25 +121,31 @@ def send_response(response):
         response -- json payload for the mqtt message
     
     """
-    print(response.json())
-    debug("Publishing API response to %s" % pubTopic)
-    pub_response = client.publish(pubTopic, response.json()) #publish
-    pub_response.wait_for_publish()
+    # print(response.json())
+    logging.debug("Sending API response to: \"%s\"" % pubTopic)
+    pub_response = client.publish(pubTopic, json.dumps(response.json())) #publish
+    logging.debug("PUBLISHED: %s", paho.error_string(pub_response.rc))
+    # pub_response.wait_for_publish()
 
 def connect():
-    """ initial connection method """
+    """ calls the mqtt client connection method 
+        
+        counts number of connection attempts
+    """
     global counter
-    debug("Attempt %s" % counter)
+    logging.debug("Attempt %s" % counter)
     counter += 1
     client.connect(broker, 1883, 60) #connect
 
 
 def initialize():
-    """ init function with exception handling """
-    global client, clientId, DEBUG_ON
+    """ init function with exception handling.
+    client.loop_forever() keeps looping this code until stop_loop() called
+    
+    """
+    global client, clientId
     try:
-        if DEBUG_ON:
-            debug('Start...')
+        logging.info("\nStart...")
 
         client = paho.Client(clientId) 
         client.on_connect = on_connect
@@ -148,51 +154,31 @@ def initialize():
         client.on_subscribe = on_subscribe
         client.on_disconnect = on_disconnect
 
-        debug("Started loop...")
+        logging.info("Connecting to: %s " % broker)
+        connect()
+        
+        logging.debug("Started loop...")
         client.loop_forever()
 
-        debug("Connecting to: %s " % broker)
-        connect()
-
     except TypeError:
-        debug('Error creating connection.')
+        logging.debug('Error creating connection.')
         return 
 
     except ValueError as err:
-        debug("%s: %s" % err.name, err.args)
+        logging.debug("%s: %s" % err.name, err.args)
         return 
 
     except Exception as inst:
-        print("Unexpected error:", sys.exc_info()[0])
-        print(inst.args)
+        logging.debug("Unexpected error:", sys.exc_info()[0])
+        logging.debug(inst.args)
         raise
 
     finally:
         client.loop_stop()
-        debug("Exit\n")
+        logging.info("Exit\n")
         return 
 
 #####
-
-
-def debug(msg):
-    """ print error messages if DEBUG_ON == true """
-    global DEBUG_ON
-    if DEBUG_ON:
-        print(msg)
-
-
-"""
-    pre defined paho mqtt server response codes
-"""
-error_codes = {
-    0: "Connection Accepted",
-    1: "Connection Refused, unacceptable protocol version",
-    2: "Connection Refused, identifier rejected",
-    3: "Connection Refused, Server unavailable",
-    4: "Connection Refused, bad user name or password",
-    5: "Connection Refused, not authorized",
-}
 
 
 initialize()
