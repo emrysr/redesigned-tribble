@@ -4,19 +4,20 @@
   <section>
     <h1 class="display-4 d-sm-flex justify-content-between align-items-end">
       {{ $t("message.feeds") }}:
-      <FeedlistToolbar :nodes="nodes"/>
+      <transition name="fade">
+        <FeedlistToolbar v-if="nodes.length>0" :nodes="nodes"/>
+      </transition>
     </h1>
   </section>
 
-  <div class="accordion">
-    <Node
-      v-for="node in nodes"
+  <div name="bounce">
+    <Node v-for="node in nodes"
       v-bind:key="node.name"
       v-bind:node="node"
     ></Node>
   </div>
 
-  <div class="alert alert-danger" v-for="error in errors" v-bind:key="error">{{ error }}</div class="alert alert-danger">
+  <div class="alert alert-danger" v-for="error in errors" v-bind:key="error">{{ error }}</div>
   <button v-if="errors.length>0" @click="getFeedData()" class="btn btn-lg btn-primary">Retry</button>
 </div>
 
@@ -27,6 +28,24 @@ import FeedTooltip from '@/components/FeedTooltip'
 import Node from '@/components/Node'
 import axios from 'axios'
 import camelCase from 'camelcase'
+
+// @TODO: request the api token from the user
+// @TODO: use localstorage to store api key on the client
+var ACCESSTOKEN = 'cb9579be83678b89a5eb0faea08ad839'
+
+// @TODO: use OAuth 2.0, CORS suppored Authorization Header for remote api calls
+axios.defaults.headers.common['Authorization'] = `Bearer ${ACCESSTOKEN}`
+// add these to the API server response headers for the CORS response to work.
+// ```php
+//  header('Access-Control-Allow-Origin: *');
+//  header('Access-Control-Allow-Headers: Authorization');
+//  header('Access-Control-Allow-Methods: GET');
+// ```
+
+// @TODO: remove this default parameter as it bypasses the CORS Authorization
+axios.defaults.params = {}
+// axios.defaults.params['apikey'] = `${ACCESSTOKEN}`
+// https://github.com/emoncms/emoncms/pull/1061
 
 export default {
   name: 'Feeds',
@@ -98,11 +117,7 @@ export default {
       this.errors = []
       let that = this
       axios
-        .get('http://bde391cd.ngrok.io/emoncms/feed/list.json', {
-          params: {
-            apikey: 'cb9579be83678b89a5eb0faea08ad839'
-          }
-        })
+        .get('http://localhost:80/emoncms/feed/list.json')
         .then(function (response) {
           var nodes = {}
           response.data.forEach(function (feed) {
@@ -145,7 +160,7 @@ export default {
             that.errors.push('Error', error.message)
           }
           that.errors.push(error.config)
-      })
+        })
     }
   },
   mounted () {
@@ -197,4 +212,22 @@ export default {
 */
   }
 }
+
+var mqtt = require('mqtt')
+var client = mqtt.connect('ws://mqtt.emrys.cymru:8080')
+var subTopic = 'response'
+var pubTopic = 'request'
+
+client.on('connect', function () {
+  client.subscribe(subTopic, function (err) {
+    if (!err) {
+      client.publish(pubTopic, 'GET /emoncms/feed/list.json HTTP/1.1')
+    }
+  })
+})
+
+client.on('message', function (topic, message) {
+  console.log(topic, '=', message.toString())
+  client.end()
+})
 </script>

@@ -5,8 +5,8 @@
       <a href="#"
         :class="'dropdown-toggle text-body py-3 pl-4 pr-3 row' + (node.collapsed ? ' collapsed' : '')"
         data-toggle="collapse"
-        :data-target="'#collapse' + node.id"
-        :aria-controls="'collapse' + node.id"
+        :data-target="'#collapse_' + node.id"
+        :aria-controls="'collapse_' + node.id"
         :aria-expanded="node.collapsed"
         @click="node.collapsed = !node.collapsed"
       >
@@ -53,24 +53,24 @@ export default {
 }
 </script>
 
-<style>
-  .accordion .card .card-header{overflow:hidden}
-  .accordion .card .a{color:inherit}
-  .accordion .card .list-group-item[data-clicked="true"]{
+<style scoped>
+  .card .card-header{overflow:hidden}
+  .card .a{color:inherit}
+  .card .list-group-item[data-clicked="true"]{
     background: #bee5eb!important;
     color: #212529!important;
   }
-  .accordion .dropdown-toggle:after{
+  .dropdown-toggle:after{
     margin-top:.5em;
     position:absolute;
     left: .8em;
     top: 1em;
+    transition: all .4s ease-in-out
   }
-  .accordion .list-group-item{
+  .list-group-item{
     cursor: pointer
   }
   .dropdown-toggle.collapsed:after{
-    transform: rotate(180deg)
+    transform: rotateX(180deg);
   }
-
 </style>
