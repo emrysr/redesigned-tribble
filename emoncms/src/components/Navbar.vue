@@ -17,7 +17,7 @@
       <div class="collapse navbar-collapse" id="mainNavbarToggler">
         <Nav />
 
-        <Search />
+        <ApiKey :apikey="apikey" />
 
         <LocaleChanger class="ml-0 ml-sm-2" />
       </div>
@@ -28,19 +28,25 @@
 <script>
 import LocaleChanger from '@/components/LocaleChanger'
 import Nav from '@/components/Nav'
-import Search from '@/components/Search'
+import ApiKey from '@/components/ApiKey'
 
 export default {
   components: {
     'LocaleChanger': LocaleChanger,
     'Nav': Nav,
-    'Search': Search
+    'ApiKey': ApiKey
   },
+  props: ['apikey'],
   name: 'Navbar',
   mounted () {
     this.$nextTick(() => {
       global.$('.navbar').hide().fadeIn('slow')
     })
+  },
+  watch: {
+    apikey (newKey) {
+      this.$parent.apikey = newKey
+    }
   }
 }
 </script>

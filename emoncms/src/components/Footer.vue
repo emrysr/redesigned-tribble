@@ -9,6 +9,7 @@
 
           <a href="https://github.com/emoncms/emoncms" class="btn btn-link btn-sm text-muted" title="Project Code" target="_blank">Open Source on github</a>
           <a href="https://emoncms.org" class="btn btn-link btn-sm text-muted" title="Project Site" target="_blank">emoncms.org 🄯 2019</a>
+          <small class="btn-sm text-muted">{{ $parent.apikey }}</small>
         </div>
       </span>
     </div>

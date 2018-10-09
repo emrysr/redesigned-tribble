@@ -24,7 +24,8 @@ export default new Router({
     },
     {
       path: '/feeds',
-      component: Feeds
+      component: Feeds,
+      props: {apikey: this.apikey}
     },
     {
       path: '/inputs',

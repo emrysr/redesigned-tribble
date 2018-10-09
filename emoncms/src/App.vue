@@ -1,3 +1,16 @@
+<template>
+  <div id="app">
+    <main>
+      <Navbar :apikey="apikey" />
+      <div class="container">
+        <router-view :apikey="apikey" />
+      </div>
+      <Footer/>
+    </main>
+    <Icons/><!-- list of svg icons -->
+  </div>
+</template>
+
 <script>
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -10,24 +23,24 @@ export default {
     'Navbar': Navbar,
     'Footer': Footer,
     'Icons': Icons
+  },
+  data () {
+    return {
+      apikey: ''
+    }
+  },
+  mounted () {
+    if (localStorage.apikey) {
+      this.apikey = localStorage.apikey
+    }
+  },
+  watch: {
+    apikey (newKey) {
+      localStorage.apikey = newKey
+    }
   }
 }
 </script>
-
-<template>
-  <div id="app">
-    <main>
-      <Navbar/>
-      <div class="container">
-        <router-view/>
-      </div>
-      <Footer/>
-    </main>
-
-    <Icons/>
-  </div>
-
-</template>
 
 <style>
 #app {

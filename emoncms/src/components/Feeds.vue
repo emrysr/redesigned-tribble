@@ -4,21 +4,26 @@
   <section>
     <h1 class="display-4 d-sm-flex justify-content-between align-items-end">
       {{ $t("message.feeds") }}:
-      <transition name="fade">
+      <transition name="fade" v-if="$parent.apikey.length > 0 && errors.length==0">
         <FeedlistToolbar v-if="nodes.length>0" :nodes="nodes"/>
       </transition>
     </h1>
   </section>
 
-  <div name="bounce">
+  <div v-if="$parent.apikey.length == 0" class="alert alert-warning">
+    <h4>Empty API key</h4>
+    Please enter in your API key. Your API key is found on your account page.
+  </div>
+  <div v-else>
+    <div class="alert alert-danger" v-for="error in errors" v-bind:key="error">{{ error }}</div>
+    <button v-if="errors.length>0" @click="getFeedData()" class="btn btn-lg btn-primary">Retry</button>
+  </div>
+  <div v-if="$parent.apikey.length > 0 && errors.length==0" name="bounce">
     <Node v-for="node in nodes"
       v-bind:key="node.name"
       v-bind:node="node"
     ></Node>
   </div>
-
-  <div class="alert alert-danger" v-for="error in errors" v-bind:key="error">{{ error }}</div>
-  <button v-if="errors.length>0" @click="getFeedData()" class="btn btn-lg btn-primary">Retry</button>
 </div>
 
 </template>
@@ -29,24 +34,6 @@ import Node from '@/components/Node'
 import axios from 'axios'
 import camelCase from 'camelcase'
 
-// @TODO: request the api token from the user
-// @TODO: use localstorage to store api key on the client
-var ACCESSTOKEN = 'cb9579be83678b89a5eb0faea08ad839'
-
-// @TODO: use OAuth 2.0, CORS suppored Authorization Header for remote api calls
-axios.defaults.headers.common['Authorization'] = `Bearer ${ACCESSTOKEN}`
-// add these to the API server response headers for the CORS response to work.
-// ```php
-//  header('Access-Control-Allow-Origin: *');
-//  header('Access-Control-Allow-Headers: Authorization');
-//  header('Access-Control-Allow-Methods: GET');
-// ```
-
-// @TODO: remove this default parameter as it bypasses the CORS Authorization
-axios.defaults.params = {}
-// axios.defaults.params['apikey'] = `${ACCESSTOKEN}`
-// https://github.com/emoncms/emoncms/pull/1061
-
 export default {
   name: 'Feeds',
   components: {
@@ -54,6 +41,7 @@ export default {
     'FeedTooltip': FeedTooltip,
     'Node': Node
   },
+  props: ['apikey'],
   data () {
     return {
       msg: 'Feeds List',
@@ -76,6 +64,9 @@ export default {
     }
   },
   computed: {
+    _apikey: function () {
+      return this.$parent.apikey
+    },
     getEngineName: function () {
       return function (_id) {
         let engineName = null
@@ -114,8 +105,23 @@ export default {
   },
   methods: {
     getFeedData: function () {
+      let apikey = this.$parent.apikey
+      if (!apikey) return false
       this.errors = []
       let that = this
+      // @TODO: use OAuth 2.0, CORS suppored Authorization Header for remote api calls
+      axios.defaults.headers.common['Authorization'] = 'Bearer ' + this.$parent.apikey
+      // add these to the API server response headers for the CORS response to work.
+      // ```php
+      //  header('Access-Control-Allow-Origin: *');
+      //  header('Access-Control-Allow-Headers: Authorization');
+      //  header('Access-Control-Allow-Methods: GET');
+      // ```
+
+      // @TODO: remove this default parameter as it bypasses the CORS Authorization
+      axios.defaults.params = {}
+      // axios.defaults.params['apikey'] = `${this.$parent.apikey}`
+      // https://github.com/emoncms/emoncms/pull/1061
       axios
         .get('http://localhost:80/emoncms/feed/list.json')
         .then(function (response) {
@@ -142,29 +148,41 @@ export default {
           // console.log(JSON.parse(JSON.stringify(Object.values(nodes))))
         })
         .catch(function (error) {
-          that.errors.push(error.response || 'Error in connecting to your local emonCMS')
+          // that.errors.push(error.response || 'Error in connecting to your local emonCMS')
 
           if (error.response) {
             // The request was made and the server responded with a status code
             // that falls out of the range of 2xx
             that.errors.push(error.response.data)
             that.errors.push(error.response.status)
-            that.errors.push(error.response.headers)
+            // that.errors.push(error.response.headers)
           } else if (error.request) {
             // The request was made but no response was received
             // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
             // http.ClientRequest in node.js
-            that.errors.push(error.request)
+            // that.errors.push(error.request)
           } else {
             // Something happened in setting up the request that triggered an Error
             that.errors.push('Error', error.message)
           }
-          that.errors.push(error.config)
+          // that.errors.push(error.config)
         })
     }
   },
+  watch: {
+    apikey: function (val) {
+      this.getFeedData()
+    }
+  },
   mounted () {
-    this.getFeedData()
+    if (!this.getFeedData()) {
+      // data not available
+      let that = this
+      setTimeout(function () {
+        that.getFeedData()
+      }, 500)
+    }
+
     /*
     this.$nextTick(() => {
       let $ = global.$
@@ -223,6 +241,7 @@ client.on('connect', function () {
     if (!err) {
       client.publish(pubTopic, 'GET /emoncms/feed/list.json HTTP/1.1')
     }
+    // http://localhost:80/emoncms/feed/list.json&apikey=cb9579be83678b89a5eb0faea08ad839
   })
 })
 

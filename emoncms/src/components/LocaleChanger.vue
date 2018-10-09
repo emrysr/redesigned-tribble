@@ -21,6 +21,7 @@ export default {
   watch: {
     lang: function (val) {
       global.$('[data-toggle="tooltip"]').tooltip('dispose')
+      localStorage.setItem('lang', val)
     }
   }
 }

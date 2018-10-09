@@ -39,11 +39,12 @@ const messages = {
     }
   }
 }
+Vue.config.lang = localStorage.lang || 'en'
 
 // Create VueI18n instance with options
 // eslint-disable-next-line no-unused-vars
 const i18n = new VueI18n({
-  locale: 'en', // set locale
+  locale: Vue.config.lang, // set locale
   messages, // set locale messages
   silentTranslationWarn: true,
   fallbackLocale: 'en',
