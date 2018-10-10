@@ -1,6 +1,6 @@
 <template>
-  <div class="card dropup">
-    <div class="card-header p-0" :id="'heading' + (node.id)">
+  <div class="card dropup" :class="node.status | bg">
+    <div class="card-header p-0" :id="'heading' + (node.id)">{{ node.name }} {{ node.interval }}
       <!-- @todo: check if any feed within the node is selected, OPEN ACCORDION IF CONTAINED ITEM IS SELECTED-->
       <a href="#"
         :class="'dropdown-toggle text-body py-3 pl-4 pr-3 row' + (node.collapsed ? ' collapsed' : '')"
@@ -48,6 +48,16 @@ export default {
     },
     prettySize (bytes) {
       return pretty(bytes)
+    },
+    bg (val) {
+      let cssClasses = {
+        success: 'bg-success',
+        warning: 'bg-warning',
+        danger: 'bg-danger'
+      }
+      if (cssClasses[val]) {
+        return cssClasses[val]
+      }
     }
   }
 }
@@ -72,5 +82,30 @@ export default {
   }
   .dropdown-toggle.collapsed:after{
     transform: rotateX(180deg);
+  }
+
+  .card { overflow: hidden}
+  .card:before{
+    content: "";
+    display: block;
+    width: .4em;
+    height: 100%;
+    /* border-radius: 50%; */
+    color: #555!important;
+    right: 0;
+    /* top: 2em; */
+    /* margin-top: -1em; */
+    position: absolute;
+    transition: width .1s ease-out
+  }
+  .card.bg-danger:before{ background: #dc3545!important }
+  .card.bg-danger{ background: none!important }
+  .card.bg-success:before{ background: #28a745!important }
+  .card.bg-success{ background: none!important }
+  .card.bg-warning:before{ background: #ffc107!important }
+  .card.bg-warning{ background: none!important }
+
+  .card:hover:before{
+    width: .6em;
   }
 </style>

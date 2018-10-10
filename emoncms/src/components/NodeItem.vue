@@ -3,6 +3,7 @@
     :title="feed.name"
     :class="{'bg-info': feed.selected,'text-light': feed.selected}"
     data-toggle="popover"
+    data-content="@todo: fill tooltip"
   >
     <div class="row">
       <div class="col col-sm-6 col-md-4 col-lg-3 row no-gutters">
@@ -54,9 +55,7 @@ export default {
       $('body').popover({
         selector: '[data-toggle="popover"]',
         placement: 'top',
-        html: true,
-        // template: '<FeedTooltip/>'
-        content: 'def'
+        html: true
       })
     })
   }
@@ -64,14 +63,16 @@ export default {
 </script>
 
 <style scoped>
-.list-group-item{overflow:hidden}
+.list-group-item{overflow:hidden;background: transparent}
 .custom-control-label::after,
 .custom-control-label::before{ margin-left:.75em; }
 .px-lg-4_5 { padding-left: .8rem!important}
+
 @media only screen and (min-width: 768px) {
   .px-lg-4_5 { padding-left: 2rem!important}
 }
 @media only screen and (min-width: 992px) {
   .px-lg-4_5 { padding-left: 1.88rem!important}
 }
+
 </style>

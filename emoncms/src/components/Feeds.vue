@@ -174,15 +174,22 @@ export default {
             collapsed: false,
             size: 0,
             lastupdate: 0,
-            feeds: []
+            feeds: [],
+            status: 'success'
           }
         }
         nodes[feed.tag].size += parseInt(feed.size)
         nodes[feed.tag].lastupdate = parseInt(feed.time) > nodes[feed.tag].lastupdate ? parseInt(feed.time) : nodes[feed.tag].lastupdate
         nodes[feed.tag].feeds.push(feed)
+        // @todo: set node.status to [success,warning,danger] dependant on feed interval and feed last_update time
+        // console.log((new Date().valueOf() / 1000) - nodes[feed.tag].lastupdate)
+
+        if ((new Date().valueOf() / 1000) - nodes[feed.tag].lastupdate < 1000) {
+          nodes[feed.tag].status = 'warning'
+        }
       })
       this.nodes = Object.values(nodes)
-      // console.log(JSON.parse(JSON.stringify(Object.values(nodes))))
+      console.log('parsed data', JSON.parse(JSON.stringify(Object.values(nodes))))
     },
     getFeedData: function () {
       let apikey = this.$parent.apikey
