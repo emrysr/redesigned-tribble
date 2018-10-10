@@ -1,12 +1,12 @@
 <template>
   <div class="card dropup">
-    <div class="card-header p-0" :id="'heading' + node.id">
+    <div class="card-header p-0" :id="'heading' + (node.id)">
       <!-- @todo: check if any feed within the node is selected, OPEN ACCORDION IF CONTAINED ITEM IS SELECTED-->
       <a href="#"
         :class="'dropdown-toggle text-body py-3 pl-4 pr-3 row' + (node.collapsed ? ' collapsed' : '')"
         data-toggle="collapse"
-        :data-target="'#collapse_' + node.id"
-        :aria-controls="'collapse_' + node.id"
+        :data-target="'#collapse_' + (node.id)"
+        :aria-controls="'collapse_' + (node.id)"
         :aria-expanded="node.collapsed"
         @click="node.collapsed = !node.collapsed"
       >
@@ -17,7 +17,7 @@
     </div>
 
     <div
-      :id="'collapse' + node.id"
+      :id="'collapse_' + node.id"
       :class="'collapse' + (!node.collapsed ? ' show' : '')" :aria-labelledby="'heading' + node.id"
     >
       <ul class="list-group list-group-flush">

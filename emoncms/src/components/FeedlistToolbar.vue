@@ -1,5 +1,5 @@
 <template>
-    <span class="btn-toolbar d-flex justify-content-end" role="toolbar" aria-label="feed buttons">
+    <span class="btn-toolbar d-flex justify-content-end mb-3" role="toolbar" aria-label="feed buttons">
       <span class="btn-group mt-1 btn-group-lg" role="group" aria-label="Basic example">
         <button type="button"
           @click="collapseAll" id="collapse-all"

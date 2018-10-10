@@ -2,10 +2,12 @@ import sys, time, logging, json
 import paho.mqtt.client as paho
 import requests as requests
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
-clientId = "user487"
+clientId = "user488"
 broker = "mqtt.emrys.cymru"
+broker = "localhost"
+port = 1883
 pubTopic = "response"
 subTopic = "request"
 retry = 5
@@ -132,10 +134,10 @@ def connect():
         
         counts number of connection attempts
     """
-    global counter
+    global counter,broker,port
     logging.debug("Attempt %s" % counter)
     counter += 1
-    client.connect(broker, 1883, 60) #connect
+    client.connect(broker, port, 60) #connect
 
 
 def initialize():
@@ -165,12 +167,11 @@ def initialize():
         return 
 
     except ValueError as err:
-        logging.debug("%s: %s" % err.name, err.args)
+        logging.debug("%s: %s" % err, err.args)
         return 
 
     except Exception as inst:
-        logging.debug("Unexpected error:", sys.exc_info()[0])
-        logging.debug(inst.args)
+        logging.debug("Error: %s. %s", inst.args[0], inst.args[1])
         raise
 
     finally:

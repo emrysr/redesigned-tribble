@@ -2,12 +2,21 @@
 <div>
 
   <section>
-    <h1 class="display-4 d-sm-flex justify-content-between align-items-end">
-      {{ $t("message.feeds") }}:
+    <div class="display-4 d-sm-flex justify-content-between align-items-end">
+      <div class="form-inline d-flex align-items-baseline">
+        {{ $t("message.feeds") }}:
+        <div class="form-group">
+          <input id="autorefresh" class="form-check-input" type="checkbox" v-model="autoreload" autocomplete="off">
+          <label for="autorefresh" class="form-check-input " :class="{active: autoreload, 'text-secondary': !autoreload, 'text-primary': autoreload}" style="font-size: 1rem">
+            auto-refresh ( {{ autoreload  ? 'on': 'off' }} )
+          </label>
+        </div>
+      </div>
+
       <transition name="fade" v-if="$parent.apikey.length > 0 && errors.length==0">
         <FeedlistToolbar v-if="nodes.length>0" :nodes="nodes"/>
       </transition>
-    </h1>
+    </div>
   </section>
 
   <div v-if="$parent.apikey.length == 0" class="alert alert-warning">
@@ -31,7 +40,6 @@
 import FeedlistToolbar from '@/components/FeedlistToolbar'
 import FeedTooltip from '@/components/FeedTooltip'
 import Node from '@/components/Node'
-import axios from 'axios'
 import camelCase from 'camelcase'
 
 export default {
@@ -48,6 +56,9 @@ export default {
       response: null,
       nodes: {},
       errors: [],
+      autoreload: true,
+      autoreloadDelay: 5000,
+      autoreloadInterval: null,
       engines: {
         MYSQL: 0,
         TIMESTORE: 1, // Depreciated
@@ -60,7 +71,11 @@ export default {
         MYSQLMEMORY: 8, // Mysql with MEMORY tables on RAM. All data is lost on shutdown
         REDISBUFFER: 9, // (internal use only) Redis Read/Write buffer , for low write mode
         CASSANDRA: 10 // Cassandra
-      }
+      },
+      subClient: null,
+      pubClient: null,
+      mqtt: null,
+      status: []
     }
   },
   computed: {
@@ -104,74 +119,92 @@ export default {
     }
   },
   methods: {
+    connect: function () {
+      if (!this.mqtt) return void 0
+
+      console.info('connect()')
+      var host = 'ws://localhost:8081'
+
+      // ACT ON RESPONSE FROM MQTT
+      this.subClient = this.mqtt.connect(host)
+      this.subClient.on('connect', this.onSubscribeConnect)
+
+      // PUBLISH REQUEST TO MQTT
+      this.pubClient = this.mqtt.connect(host)
+      this.pubClient.on('connect', this.onPublishConnect)
+    },
+    disconnect: function () {
+      // @todo: this should unsubscribe and disconnect from subClient & pubClient
+    },
+    onSubscribeConnect: function (connack) {
+      var subTopic = 'response'
+      if (connack.returnCode === 0) {
+        this.subClient.on('message', this.onSubscribeMessage)
+        this.subClient.subscribe(subTopic)
+        this.status.push('connected to: ' + subTopic)
+      } else {
+        this.status.push('unable to connect to: ' + subTopic)
+      }
+    },
+    onPublishConnect: function (connack) {
+      var pubTopic = 'request'
+      var emonHost = 'http://localhost:80'
+      if (connack.returnCode === 0 && !connack.sessionPresent) {
+        this.pubClient.publish(pubTopic, emonHost + '/emoncms/feed/list.json&apikey=' + this.$parent.apikey)
+        this.status.push('connected to: ' + pubTopic)
+      } else {
+        this.status.push('unable to connect to: ' + pubTopic)
+      }
+    },
+    onSubscribeMessage: function (topic, message) {
+      console.log('received data:', JSON.parse(message.toString()), new Date().valueOf())
+      this.processData(JSON.parse(message.toString()))
+    },
+    processData: function (data) {
+      let that = this
+      var nodes = {}
+      data.forEach(function (feed) {
+        // create array of nodes with array of feeds as a property of each node
+        feed.engine_name = that.getEngineName(feed.engine)
+        feed.selected = false
+        if (!nodes[feed.tag]) {
+          nodes[feed.tag] = {
+            tag: feed.tag,
+            id: camelCase(feed.tag),
+            collapsed: false,
+            size: 0,
+            lastupdate: 0,
+            feeds: []
+          }
+        }
+        nodes[feed.tag].size += parseInt(feed.size)
+        nodes[feed.tag].lastupdate = parseInt(feed.time) > nodes[feed.tag].lastupdate ? parseInt(feed.time) : nodes[feed.tag].lastupdate
+        nodes[feed.tag].feeds.push(feed)
+      })
+      this.nodes = Object.values(nodes)
+      // console.log(JSON.parse(JSON.stringify(Object.values(nodes))))
+    },
     getFeedData: function () {
       let apikey = this.$parent.apikey
       if (!apikey) return false
       this.errors = []
-      let that = this
-      // @TODO: use OAuth 2.0, CORS suppored Authorization Header for remote api calls
-      axios.defaults.headers.common['Authorization'] = 'Bearer ' + this.$parent.apikey
-      // add these to the API server response headers for the CORS response to work.
-      // ```php
-      //  header('Access-Control-Allow-Origin: *');
-      //  header('Access-Control-Allow-Headers: Authorization');
-      //  header('Access-Control-Allow-Methods: GET');
-      // ```
-
-      // @TODO: remove this default parameter as it bypasses the CORS Authorization
-      axios.defaults.params = {}
-      // axios.defaults.params['apikey'] = `${this.$parent.apikey}`
-      // https://github.com/emoncms/emoncms/pull/1061
-      axios
-        .get('http://localhost:80/emoncms/feed/list.json')
-        .then(function (response) {
-          var nodes = {}
-          response.data.forEach(function (feed) {
-            // create array of nodes with array of feeds as a property of each node
-            feed.engine_name = that.getEngineName(feed.engine)
-            feed.selected = false
-            if (!nodes[feed.tag]) {
-              nodes[feed.tag] = {
-                tag: feed.tag,
-                id: camelCase(feed.tag),
-                collapsed: false,
-                size: 0,
-                lastupdate: 0,
-                feeds: []
-              }
-            }
-            nodes[feed.tag].size += parseInt(feed.size)
-            nodes[feed.tag].lastupdate = parseInt(feed.time) > nodes[feed.tag].lastupdate ? parseInt(feed.time) : nodes[feed.tag].lastupdate
-            nodes[feed.tag].feeds.push(feed)
-          })
-          that.nodes = Object.values(nodes)
-          // console.log(JSON.parse(JSON.stringify(Object.values(nodes))))
-        })
-        .catch(function (error) {
-          // that.errors.push(error.response || 'Error in connecting to your local emonCMS')
-
-          if (error.response) {
-            // The request was made and the server responded with a status code
-            // that falls out of the range of 2xx
-            that.errors.push(error.response.data)
-            that.errors.push(error.response.status)
-            // that.errors.push(error.response.headers)
-          } else if (error.request) {
-            // The request was made but no response was received
-            // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-            // http.ClientRequest in node.js
-            // that.errors.push(error.request)
-          } else {
-            // Something happened in setting up the request that triggered an Error
-            that.errors.push('Error', error.message)
-          }
-          // that.errors.push(error.config)
-        })
+      this.connect()
     }
   },
   watch: {
     apikey: function (val) {
       this.getFeedData()
+    },
+    autoreload: function (val) {
+      if (!val) {
+        if (this.autoreloadInterval) window.clearInterval(this.autoreloadInterval)
+      } else {
+        this.connect()
+        let that = this
+        this.autoreloadInterval = window.setTimeout(function () {
+          that.connect()
+        }, this.autoreloadDelay)
+      }
     }
   },
   mounted () {
@@ -182,6 +215,9 @@ export default {
         that.getFeedData()
       }, 500)
     }
+    this.autoreload = false
+
+    this.mqtt = require('mqtt')
 
     /*
     this.$nextTick(() => {
@@ -231,22 +267,4 @@ export default {
   }
 }
 
-var mqtt = require('mqtt')
-var client = mqtt.connect('ws://mqtt.emrys.cymru:8080')
-var subTopic = 'response'
-var pubTopic = 'request'
-
-client.on('connect', function () {
-  client.subscribe(subTopic, function (err) {
-    if (!err) {
-      client.publish(pubTopic, 'GET /emoncms/feed/list.json HTTP/1.1')
-    }
-    // http://localhost:80/emoncms/feed/list.json&apikey=cb9579be83678b89a5eb0faea08ad839
-  })
-})
-
-client.on('message', function (topic, message) {
-  console.log(topic, '=', message.toString())
-  client.end()
-})
 </script>
