@@ -5,8 +5,11 @@ import requests as requests
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 clientId = "user488"
-broker = "mqtt.emrys.cymru"
+# broker = "mqtt.emrys.cymru"
+broker = "sheeppen.ddns.net"
 broker = "localhost"
+username = "emonpi"
+password = "emonpimqtt2016"
 port = 1883
 pubTopic = "response"
 subTopic = "request"
@@ -134,9 +137,10 @@ def connect():
         
         counts number of connection attempts
     """
-    global counter,broker,port
+    global counter,broker,port,username,password
     logging.debug("Attempt %s" % counter)
     counter += 1
+    client.username_pw_set(username, password)
     client.connect(broker, port, 60) #connect
 
 

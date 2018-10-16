@@ -12,6 +12,7 @@
           <label :for="'select-feed-' + feed.id" class="custom-control-label position-absolute"></label>
         </div>
         <div class="text-truncate d-inline-block pl-3">{{feed.name}}</div>
+        <FeedTooltip class="d-none" />
       </div>
 
       <div class="d-none d-md-block px-1"><Icon v-bind:icon="privateIcon"/></div>

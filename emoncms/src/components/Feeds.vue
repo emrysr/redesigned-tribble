@@ -124,19 +124,24 @@ export default {
 
       console.info('connect()')
       var host = 'ws://localhost:8081'
-
+      // var host = 'ws://sheeppen.ddns.net:1884'
+      var options = {
+        username: 'emonpi',
+        password: 'emonpimqtt2016'
+      }
       // ACT ON RESPONSE FROM MQTT
-      this.subClient = this.mqtt.connect(host)
+      this.subClient = this.mqtt.connect(host, options)
       this.subClient.on('connect', this.onSubscribeConnect)
 
       // PUBLISH REQUEST TO MQTT
-      this.pubClient = this.mqtt.connect(host)
+      this.pubClient = this.mqtt.connect(host, options)
       this.pubClient.on('connect', this.onPublishConnect)
     },
     disconnect: function () {
       // @todo: this should unsubscribe and disconnect from subClient & pubClient
     },
     onSubscribeConnect: function (connack) {
+      // console.log('subscribe', connack)
       var subTopic = 'response'
       if (connack.returnCode === 0) {
         this.subClient.on('message', this.onSubscribeMessage)
@@ -148,9 +153,9 @@ export default {
     },
     onPublishConnect: function (connack) {
       var pubTopic = 'request'
-      var emonHost = 'http://localhost:80'
+      var emonHost = 'http://localhost:80/emoncms'
       if (connack.returnCode === 0 && !connack.sessionPresent) {
-        this.pubClient.publish(pubTopic, emonHost + '/emoncms/feed/list.json&apikey=' + this.$parent.apikey)
+        this.pubClient.publish(pubTopic, emonHost + '/feed/list.json&apikey=' + this.$parent.apikey)
         this.status.push('connected to: ' + pubTopic)
       } else {
         this.status.push('unable to connect to: ' + pubTopic)
@@ -171,7 +176,7 @@ export default {
           nodes[feed.tag] = {
             tag: feed.tag,
             id: camelCase(feed.tag),
-            collapsed: false,
+            collapsed: true,
             size: 0,
             lastupdate: 0,
             feeds: [],
