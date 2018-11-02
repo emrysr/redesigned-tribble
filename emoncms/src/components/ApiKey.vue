@@ -2,7 +2,7 @@
     <form class="form-inline my-2 my-lg-0">
         <div class="form-group">
             <small class="form-text text-light pr-2">{{ $t('message.apikey') }}</small>
-            <input type="text" v-model="apikey" :title="$t('message.apikey')" class="form-control" :placeholder="$t('message.help')" :aria-label="$t('message.apikey')" aria-describedby="">
+            <input type="text" v-model="local_api_key" :title="$t('message.apikey')" class="form-control" :placeholder="$t('message.help')" :aria-label="$t('message.apikey')" aria-describedby="">
         </div>
     </form>
 </template>
@@ -11,7 +11,6 @@
 
 export default {
   name: 'ApiKey',
-  props: ['apikey'],
   i18n: { // `i18n` option, setup locale info for component
     messages: {
       en: {
@@ -28,9 +27,15 @@ export default {
       }
     }
   },
+  data: function () {
+    return {
+      local_api_key: process.env.API_KEY
+    }
+  },
   watch: {
-    apikey (newKey) {
-      this.$parent.apikey = newKey
+    local_api_key (newKey) {
+      // process.env.API_KEY = newKey
+      console.log('apikey change')
     }
   }
 }

@@ -1,9 +1,9 @@
 <template>
   <div id="app">
     <main>
-      <Navbar :apikey="apikey" />
+      <Navbar />
       <div class="container">
-        <router-view :apikey="apikey" />
+        <router-view :authenticated="authenticated" />
       </div>
       <Footer/>
     </main>
@@ -26,17 +26,7 @@ export default {
   },
   data () {
     return {
-      apikey: ''
-    }
-  },
-  mounted () {
-    if (localStorage.apikey) {
-      this.apikey = localStorage.apikey
-    }
-  },
-  watch: {
-    apikey (newKey) {
-      localStorage.apikey = newKey
+      authenticated: false
     }
   }
 }

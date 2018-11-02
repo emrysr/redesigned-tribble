@@ -9,7 +9,7 @@
 
           <a href="https://github.com/emoncms/emoncms" class="btn btn-link btn-sm text-muted" title="Project Code" target="_blank">Open Source on github</a>
           <a href="https://emoncms.org" class="btn btn-link btn-sm text-muted" title="Project Site" target="_blank">emoncms.org 🄯 2019</a>
-          <small class="btn-sm text-muted">{{ $parent.apikey }}</small>
+          <small class="btn-sm text-muted">{{ localApiKey }}</small>
         </div>
       </span>
     </div>
@@ -21,6 +21,7 @@ export default {
   name: 'Footer',
   data: function () {
     return {
+      localApiKey: process.env.API_KEY,
       links: [
         {id: 1, page: '/', title: this.$appName}
       ]

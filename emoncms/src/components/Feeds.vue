@@ -3,36 +3,40 @@
 
   <section>
     <div class="display-4 d-sm-flex justify-content-between align-items-end">
-      <div class="form-inline d-flex align-items-baseline">
+      <div>
         {{ $t("message.feeds") }}:
-        <div class="form-group">
-          <input id="autorefresh" class="form-check-input" type="checkbox" v-model="autoreload" autocomplete="off">
-          <label for="autorefresh" class="form-check-input " :class="{active: autoreload, 'text-secondary': !autoreload, 'text-primary': autoreload}" style="font-size: 1rem">
-            auto-refresh ( {{ autoreload  ? 'on': 'off' }} )
+        <div class="btn-group" role="status">
+          <button class="btn" :class="{active: connected, 'btn-outline-success': connected, 'btn-outline-secondary': !connected}" @click="disconnect()">
+            {{ !connected ? 'Connecting&hellip;' : 'Connected' }}
+          </button>
+          <input id="autorefresh" class="form-check-input invisible" type="checkbox" v-model="autoreload" autocomplete="off">
+          <label for="autorefresh" class="btn btn-outline-primary mb-0" :class="{active: autoreload}" style="font-size: 1rem" :title="'Loaded content '+counter+' times @ '+(autoreloadDelay/1000)+'s intervals'">
+            Live ({{ autoreload  ? 'on': 'off' }})
           </label>
         </div>
       </div>
 
-      <transition name="fade" v-if="$parent.apikey.length > 0 && errors.length==0">
+      <transition name="fade" v-if="localApiKey.length > 0 && errors.length==0">
         <FeedlistToolbar v-if="nodes.length>0" :nodes="nodes"/>
       </transition>
     </div>
   </section>
 
-  <div v-if="$parent.apikey.length == 0" class="alert alert-warning">
+  <div v-if="localApiKey.length == 0" class="alert alert-warning">
     <h4>Empty API key</h4>
-    Please enter in your API key. Your API key is found on your account page.
+    Please enter in your API key. Your API key is found on your <a href="http://localhost/emoncms/user/view" title="emoncms user account page" target="_blank">account page</a>.
   </div>
   <div v-else>
     <div class="alert alert-danger" v-for="error in errors" v-bind:key="error">{{ error }}</div>
     <button v-if="errors.length>0" @click="getFeedData()" class="btn btn-lg btn-primary">Retry</button>
   </div>
-  <div v-if="$parent.apikey.length > 0 && errors.length==0" name="bounce">
+  <div id="feedlist" v-if="localApiKey.length > 0 && errors.length==0" name="bounce">
     <Node v-for="node in nodes"
       v-bind:key="node.name"
       v-bind:node="node"
     ></Node>
   </div>
+
 </div>
 
 </template>
@@ -56,7 +60,7 @@ export default {
       response: null,
       nodes: {},
       errors: [],
-      autoreload: true,
+      autoreload: false,
       autoreloadDelay: 5000,
       autoreloadInterval: null,
       engines: {
@@ -72,16 +76,20 @@ export default {
         REDISBUFFER: 9, // (internal use only) Redis Read/Write buffer , for low write mode
         CASSANDRA: 10 // Cassandra
       },
+      client: null,
+      pubTopic: 'user/emrys/request',
+      subTopic: 'user/emrys/response',
       subClient: null,
       pubClient: null,
       mqtt: null,
-      status: []
+      connected: false,
+      subscribed: false,
+      status: [],
+      counter: 0,
+      localApiKey: process.env.API_KEY
     }
   },
   computed: {
-    _apikey: function () {
-      return this.$parent.apikey
-    },
     getEngineName: function () {
       return function (_id) {
         let engineName = null
@@ -121,86 +129,143 @@ export default {
   methods: {
     connect: function () {
       if (!this.mqtt) return void 0
-
       console.info('connect()')
-      var host = 'ws://localhost:8081'
-      // var host = 'ws://sheeppen.ddns.net:1884'
+      let that = this
       var options = {
-        username: 'emonpi',
-        password: 'emonpimqtt2016'
+        username: process.env.MQTT_USER,
+        password: process.env.MQTT_PASS,
+        useSSL: true,
+        onFailure: function () {
+          that.disconnect()
+        }
       }
-      // ACT ON RESPONSE FROM MQTT
-      this.subClient = this.mqtt.connect(host, options)
-      this.subClient.on('connect', this.onSubscribeConnect)
-
-      // PUBLISH REQUEST TO MQTT
-      this.pubClient = this.mqtt.connect(host, options)
-      this.pubClient.on('connect', this.onPublishConnect)
+      this.client = this.mqtt.connect(process.env.MQTT_PROTOCOL + '://' + process.env.MQTT_HOST + ':' + process.env.MQTT_PORT, options)
+      this.client.on('connect', this.onConnect)
+      this.client.on('message', this.onMessage)
+      this.client.on('disconnect', this.onDisconnect)
+    },
+    publish: function () {
+      if (!this.connected) {
+        this.connect()
+      } else {
+        console.info('publish()')
+        var command = process.env.ROOT_API + '/feed/list.json&apikey=' + this.localApiKey
+        console.log('command: ', command)
+        this.client.publish(this.pubTopic, command)
+        this.status.push('publishing to: ' + this.pubTopic)
+      }
+    },
+    subscribe: function () {
+      if (!this.connected) {
+        this.connect()
+      } else {
+        console.info('subscribe()')
+        this.client.subscribe(this.subTopic)
+      }
     },
     disconnect: function () {
       // @todo: this should unsubscribe and disconnect from subClient & pubClient
+      let that = this
+      let options = {
+        onSuccess: function () {
+          that.subscribed = false
+        }
+      }
+      this.client.unsubscribe(this.pubTopic, options)
+      this.client.disconnect()
+      this.mqtt.disconnect()
     },
-    onSubscribeConnect: function (connack) {
-      // console.log('subscribe', connack)
-      var subTopic = 'response'
-      if (connack.returnCode === 0) {
-        this.subClient.on('message', this.onSubscribeMessage)
-        this.subClient.subscribe(subTopic)
-        this.status.push('connected to: ' + subTopic)
+    onConnect: function (connack) {
+      console.info('connected to broker', connack)
+      if (connack.returnCode > 0) {
+        this.status.push('unable to connect to: ' + this.pubTopic)
+        this.connected = false
       } else {
-        this.status.push('unable to connect to: ' + subTopic)
+        this.connected = true
+        this.subscribe()
+        this.publish()
       }
     },
-    onPublishConnect: function (connack) {
-      var pubTopic = 'request'
-      var emonHost = 'http://localhost:80/emoncms'
-      if (connack.returnCode === 0 && !connack.sessionPresent) {
-        this.pubClient.publish(pubTopic, emonHost + '/feed/list.json&apikey=' + this.$parent.apikey)
-        this.status.push('connected to: ' + pubTopic)
+    onDisconnect: function (connack) {
+      console.info('disconnect callback', connack)
+      if (connack.returnCode > 0) {
+        this.status.push('unable to disconnect to: ' + this.pubTopic)
+        this.connected = true
       } else {
-        this.status.push('unable to connect to: ' + pubTopic)
+        this.connected = false
       }
     },
-    onSubscribeMessage: function (topic, message) {
-      console.log('received data:', JSON.parse(message.toString()), new Date().valueOf())
+    onMessage: function (topic, message) {
+      console.info('onMessage():', topic, message.length)
       this.processData(JSON.parse(message.toString()))
     },
+    isSelected: function (feedId) {
+      for (let i in this.nodes) {
+        let node = this.nodes[i]
+
+        for (let j in node.feeds) {
+          let feed = node.feeds[j]
+          if (feed.id === feedId) {
+            return typeof this.nodes[i][j].selected === 'undefined' ? false : this.nodes[i][j].selected === true
+          }
+        }
+      }
+      // default to collapsed is true
+      return false
+    },
+    isCollapsed: function (tag) {
+      for (let key in this.nodes) {
+        let node = this.nodes[key]
+        if (node.tag === tag) {
+          return typeof this.nodes[key].collapsed === 'undefined' ? true : this.nodes[key].collapsed === true
+        }
+      }
+      // default to collapsed is true
+      return true
+    },
     processData: function (data) {
-      let that = this
       var nodes = {}
-      data.forEach(function (feed) {
+      for (let key in data) {
+        let feed = data[key]
         // create array of nodes with array of feeds as a property of each node
-        feed.engine_name = that.getEngineName(feed.engine)
-        feed.selected = false
+        feed.engine_name = this.getEngineName(feed.engine)
+        feed.selected = this.isSelected(feed.id)
+
         if (!nodes[feed.tag]) {
           nodes[feed.tag] = {
             tag: feed.tag,
             id: camelCase(feed.tag),
-            collapsed: true,
+            collapsed: this.isCollapsed(feed.tag),
             size: 0,
             lastupdate: 0,
             feeds: [],
-            status: 'success'
+            status: 'warning'
           }
         }
+
         nodes[feed.tag].size += parseInt(feed.size)
         nodes[feed.tag].lastupdate = parseInt(feed.time) > nodes[feed.tag].lastupdate ? parseInt(feed.time) : nodes[feed.tag].lastupdate
+
         nodes[feed.tag].feeds.push(feed)
         // @todo: set node.status to [success,warning,danger] dependant on feed interval and feed last_update time
         // console.log((new Date().valueOf() / 1000) - nodes[feed.tag].lastupdate)
 
-        if ((new Date().valueOf() / 1000) - nodes[feed.tag].lastupdate < 1000) {
-          nodes[feed.tag].status = 'warning'
+        if ((new Date().valueOf() / 1000) - nodes[feed.tag].lastupdate < 400) {
+          nodes[feed.tag].status = 'success'
         }
-      })
+        if ((new Date().valueOf() / 1000) - nodes[feed.tag].lastupdate > 10000) {
+          nodes[feed.tag].status = 'danger'
+        }
+      }
       this.nodes = Object.values(nodes)
+      this.counter++
       console.log('parsed data', JSON.parse(JSON.stringify(Object.values(nodes))))
     },
     getFeedData: function () {
-      let apikey = this.$parent.apikey
-      if (!apikey) return false
+      if (!this.localApiKey) return false
       this.errors = []
-      this.connect()
+      // start it all off by sending the request to the mqtt server
+      this.publish()
     }
   },
   watch: {
@@ -208,13 +273,16 @@ export default {
       this.getFeedData()
     },
     autoreload: function (val) {
+      window.clearInterval(this.autoreloadInterval)
       if (!val) {
-        if (this.autoreloadInterval) window.clearInterval(this.autoreloadInterval)
+        console.log('auto reload OFF')
       } else {
-        this.connect()
+        console.log('auto reload ON')
+        this.publish()
         let that = this
-        this.autoreloadInterval = window.setTimeout(function () {
-          that.connect()
+        this.autoreloadInterval = window.setInterval(function () {
+          console.log('auto-reload', new Date().valueOf())
+          that.publish()
         }, this.autoreloadDelay)
       }
     }
@@ -227,11 +295,20 @@ export default {
         that.getFeedData()
       }, 500)
     }
-    this.autoreload = false
 
     this.mqtt = require('mqtt')
 
     /*
+    // collapsable bs events
+    this.$nextTick(() => {
+      let $ = global.$
+      $('#feedlist').on('hidden.bs.collapse', function () {
+
+      })
+    })
+    */
+    /*
+    TOOLTIP CODE
     this.$nextTick(() => {
       let $ = global.$
       $('body').tooltip({

@@ -5,19 +5,21 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       <router-link to="/" class="navbar-brand">
-        <small class="pr-2 position-absolute badge badge-rounded badge-info" style="margin-left:-2em">
-          <span class="d-block d-sm-none">xs</span>
-          <span class="d-none d-sm-block d-md-none">sm</span>
-          <span class="d-none d-md-block d-lg-none">md</span>
-          <span class="d-none d-lg-block d-xl-none">lg</span>
-          <span class="d-none d-xl-block">xl</span>
-        </small>
+      <small class="pr-2 position-absolute badge badge-rounded badge-info" style="margin-left:-2em">
+        <span class="d-block d-sm-none">xs</span>
+        <span class="d-none d-sm-block d-md-none">sm</span>
+        <span class="d-none d-md-block d-lg-none">md</span>
+        <span class="d-none d-lg-block d-xl-none">lg</span>
+        <span class="d-none d-xl-block">xl</span>
+      </small>
       {{$appName}}
       </router-link>
       <div class="collapse navbar-collapse" id="mainNavbarToggler">
         <Nav />
 
-        <ApiKey :apikey="apikey" />
+        <Auth :authenticated="authenticated" />
+
+        <ApiKey />
 
         <LocaleChanger class="ml-0 ml-sm-2" />
       </div>
@@ -29,29 +31,21 @@
 import LocaleChanger from '@/components/LocaleChanger'
 import Nav from '@/components/Nav'
 import ApiKey from '@/components/ApiKey'
+import Auth from '@/components/Auth'
 
 export default {
   components: {
     'LocaleChanger': LocaleChanger,
     'Nav': Nav,
-    'ApiKey': ApiKey
+    'ApiKey': ApiKey,
+    'Auth': Auth
   },
-  props: ['apikey'],
+  props: ['authenticated'],
   name: 'Navbar',
   mounted () {
     this.$nextTick(() => {
       global.$('.navbar').hide().fadeIn('slow')
     })
-  },
-  watch: {
-    apikey (newKey) {
-      this.$parent.apikey = newKey
-    }
   }
 }
 </script>
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-
-</style>
