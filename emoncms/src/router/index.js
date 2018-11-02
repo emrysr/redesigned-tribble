@@ -32,7 +32,7 @@ export default new Router({
     {
       path: '/feeds',
       component: Feeds,
-      props: {apikey: this.apikey, authenticated: this.authenticated}
+      props: {config: this.config}
     },
     {
       path: '/inputs',

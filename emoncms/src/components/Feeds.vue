@@ -6,8 +6,8 @@
       <div>
         {{ $t("message.feeds") }}:
         <div class="btn-group" role="status">
-          <button class="btn" :class="{active: connected, 'btn-outline-success': connected, 'btn-outline-secondary': !connected}" @click="disconnect()">
-            {{ !connected ? 'Connecting&hellip;' : 'Connected' }}
+          <button class="btn" :class="{active: app.mqtt.connected, 'btn-outline-success': app.mqtt.connected, 'btn-outline-secondary': !app.mqtt.connected}" @click="disconnect()">
+            {{ !app.mqtt.connected ? 'Connecting&hellip;' : 'Connected' }}
           </button>
           <input id="autorefresh" class="form-check-input invisible" type="checkbox" v-model="autoreload" autocomplete="off">
           <label for="autorefresh" class="btn btn-outline-primary mb-0" :class="{active: autoreload}" style="font-size: 1rem" :title="'Loaded content '+counter+' times @ '+(autoreloadDelay/1000)+'s intervals'">
@@ -45,6 +45,7 @@ import FeedlistToolbar from '@/components/FeedlistToolbar'
 import FeedTooltip from '@/components/FeedTooltip'
 import Node from '@/components/Node'
 import camelCase from 'camelcase'
+import jsonSize from 'json-size'
 
 export default {
   name: 'Feeds',
@@ -53,7 +54,7 @@ export default {
     'FeedTooltip': FeedTooltip,
     'Node': Node
   },
-  props: ['apikey'],
+  props: ['app'],
   data () {
     return {
       msg: 'Feeds List',
@@ -63,6 +64,9 @@ export default {
       autoreload: false,
       autoreloadDelay: 5000,
       autoreloadInterval: null,
+      status: [],
+      counter: 0,
+      localApiKey: this.app.apikey,
       engines: {
         MYSQL: 0,
         TIMESTORE: 1, // Depreciated
@@ -75,18 +79,7 @@ export default {
         MYSQLMEMORY: 8, // Mysql with MEMORY tables on RAM. All data is lost on shutdown
         REDISBUFFER: 9, // (internal use only) Redis Read/Write buffer , for low write mode
         CASSANDRA: 10 // Cassandra
-      },
-      client: null,
-      pubTopic: 'user/emrys/request',
-      subTopic: 'user/emrys/response',
-      subClient: null,
-      pubClient: null,
-      mqtt: null,
-      connected: false,
-      subscribed: false,
-      status: [],
-      counter: 0,
-      localApiKey: process.env.API_KEY
+      }
     }
   },
   computed: {
@@ -128,39 +121,25 @@ export default {
   },
   methods: {
     connect: function () {
-      if (!this.mqtt) return void 0
-      console.info('connect()')
-      let that = this
-      var options = {
-        username: process.env.MQTT_USER,
-        password: process.env.MQTT_PASS,
-        useSSL: true,
-        onFailure: function () {
-          that.disconnect()
-        }
-      }
-      this.client = this.mqtt.connect(process.env.MQTT_PROTOCOL + '://' + process.env.MQTT_HOST + ':' + process.env.MQTT_PORT, options)
-      this.client.on('connect', this.onConnect)
-      this.client.on('message', this.onMessage)
-      this.client.on('disconnect', this.onDisconnect)
+      if (!this.app.mqtt.client) throw new Error('mqtt client not initialized')
+      this.app.mqtt.client.on('connect', this.onConnect)
+      this.app.mqtt.client.on('message', this.onMessage)
     },
     publish: function () {
-      if (!this.connected) {
+      if (!this.app.mqtt.connected) {
         this.connect()
       } else {
-        console.info('publish()')
         var command = process.env.ROOT_API + '/feed/list.json&apikey=' + this.localApiKey
-        console.log('command: ', command)
-        this.client.publish(this.pubTopic, command)
-        this.status.push('publishing to: ' + this.pubTopic)
+        this.app.mqtt.client.publish(this.app.mqtt.pubTopic, command)
+        this.app.mqtt.status.push('publishing ' + command + ' to ' + this.app.mqtt.pubTopic)
+        this.app.mqtt.connected = true
       }
     },
     subscribe: function () {
-      if (!this.connected) {
+      if (!this.app.mqtt.connected) {
         this.connect()
       } else {
-        console.info('subscribe()')
-        this.client.subscribe(this.subTopic)
+        this.app.mqtt.client.subscribe(this.app.mqtt.subTopic)
       }
     },
     disconnect: function () {
@@ -168,35 +147,35 @@ export default {
       let that = this
       let options = {
         onSuccess: function () {
-          that.subscribed = false
+          that.app.mqtt.subscribed = false
         }
       }
-      this.client.unsubscribe(this.pubTopic, options)
-      this.client.disconnect()
-      this.mqtt.disconnect()
+      this.app.mqtt.client.unsubscribe(this.app.mqtt.pubTopic, options)
+      this.app.mqtt.client.disconnect()
+      this.app.mqtt.disconnect()
     },
     onConnect: function (connack) {
-      console.info('connected to broker', connack)
+      this.app.mqtt.status.push('connected to broker', connack)
       if (connack.returnCode > 0) {
-        this.status.push('unable to connect to: ' + this.pubTopic)
-        this.connected = false
+        this.app.mqtt.status.push('unable to connect to: ' + this.app.mqtt.pubTopic)
+        this.app.mqtt.connected = false
       } else {
-        this.connected = true
+        this.app.mqtt.connected = true
         this.subscribe()
         this.publish()
       }
     },
     onDisconnect: function (connack) {
-      console.info('disconnect callback', connack)
+      this.app.mqtt.status.push('disconnect callback', connack)
       if (connack.returnCode > 0) {
-        this.status.push('unable to disconnect to: ' + this.pubTopic)
-        this.connected = true
+        this.app.mqtt.status.push('unable to disconnect to: ' + this.app.mqtt.pubTopic)
+        this.app.mqtt.connected = true
       } else {
-        this.connected = false
+        this.app.mqtt.connected = false
       }
     },
     onMessage: function (topic, message) {
-      console.info('onMessage():', topic, message.length)
+      this.app.mqtt.status.push('data received from: " ' + topic + '" (' + Number(jsonSize(message) / 1024).toFixed(2) + 'KB)')
       this.processData(JSON.parse(message.toString()))
     },
     isSelected: function (feedId) {
@@ -206,7 +185,7 @@ export default {
         for (let j in node.feeds) {
           let feed = node.feeds[j]
           if (feed.id === feedId) {
-            return typeof this.nodes[i][j].selected === 'undefined' ? false : this.nodes[i][j].selected === true
+            return typeof this.nodes[i].feeds[j].selected === 'undefined' ? false : this.nodes[i].feeds[j].selected === true
           }
         }
       }
@@ -259,10 +238,10 @@ export default {
       }
       this.nodes = Object.values(nodes)
       this.counter++
-      console.log('parsed data', JSON.parse(JSON.stringify(Object.values(nodes))))
+      // this.status.push('parsed data', JSON.parse(JSON.stringify(Object.values(nodes))))
     },
     getFeedData: function () {
-      if (!this.localApiKey) return false
+      if (!this.app.apikey) throw new Error('apikey not available')
       this.errors = []
       // start it all off by sending the request to the mqtt server
       this.publish()
@@ -270,18 +249,19 @@ export default {
   },
   watch: {
     apikey: function (val) {
+      this.app.apikey = val
       this.getFeedData()
     },
     autoreload: function (val) {
       window.clearInterval(this.autoreloadInterval)
       if (!val) {
-        console.log('auto reload OFF')
+        // this.status.push('auto reload OFF')
       } else {
-        console.log('auto reload ON')
+        // this.status.push('auto reload ON')
         this.publish()
         let that = this
         this.autoreloadInterval = window.setInterval(function () {
-          console.log('auto-reload', new Date().valueOf())
+          // this.status.push('auto-reloading...')
           that.publish()
         }, this.autoreloadDelay)
       }
@@ -289,14 +269,12 @@ export default {
   },
   mounted () {
     if (!this.getFeedData()) {
-      // data not available
+      // data not available - wait before retry
       let that = this
       setTimeout(function () {
         that.getFeedData()
       }, 500)
     }
-
-    this.mqtt = require('mqtt')
 
     /*
     // collapsable bs events
