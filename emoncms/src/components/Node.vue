@@ -1,6 +1,6 @@
 <template>
   <div class="card dropup" :class="node.status | bg">
-    <div class="card-header p-0" :id="'heading' + (node.id)">{{ node.name }}
+    <div class="card-header p-0" :id="'heading' + (node.id)">
       <!-- @todo: check if any feed within the node is selected, OPEN ACCORDION IF CONTAINED ITEM IS SELECTED-->
       <a href="#"
         :class="'dropdown-toggle text-body py-3 pl-4 pr-3 row' + (node.collapsed ? ' collapsed' : '')"
@@ -10,7 +10,7 @@
         :aria-expanded="node.collapsed"
         @click="node.collapsed = !node.collapsed"
       >
-        <h5 class="col col-sm-5 col-md-4 col-lg-5 mb-0 ml-3 ml-sm-4">{{node.tag}}:</h5>
+        <h5 class="col col-sm-5 col-md-4 col-lg-5 mb-0 ml-3 ml-sm-4">{{node.tag}}: <small v-if="selected(node.tag)>0" class="font-weight-light">({{ selected(node.tag) }})</small></h5>
         <div class="col-sm-3 d-none d-sm-block">{{ node.size | prettySize }}</div>
         <div class="col-sm-3 d-none d-sm-block text-right ml-auto text-truncate">{{ node.lastupdate | relativeTime }}</div>
       </a>
@@ -42,6 +42,17 @@ export default {
     'NodeItem': NodeItem
   },
   props: ['node'],
+  methods: {
+    selected: function (tag) {
+      let total = 0
+      if (this.node.tag === tag) {
+        for (let feed in this.node.feeds) {
+          if (this.node.feeds[feed].selected) total++
+        }
+      }
+      return total
+    }
+  },
   filters: {
     relativeTime (time) {
       return !time ? 'n/a' : moment.unix(time).fromNow()
