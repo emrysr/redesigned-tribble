@@ -129,7 +129,7 @@ export default {
       if (!this.app.mqtt.connected) {
         this.connect()
       } else {
-        var command = process.env.ROOT_API + '/feed/list.json&apikey=' + this.localApiKey
+        var command = process.env.ROOT_API + '/feed/list.json'
         this.app.mqtt.client.publish(this.app.mqtt.pubTopic, command)
         this.app.mqtt.status.push('publishing ' + command + ' to ' + this.app.mqtt.pubTopic)
         this.app.mqtt.connected = true

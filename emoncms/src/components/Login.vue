@@ -4,7 +4,7 @@
       <p class="lead">{{lead}}</p>
       <hr class="my-4">
       <p>{{intro}}</p>
-      <div v-if="!$parent.authenticated">
+      <div v-if="!app.authenticated">
         <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#login-modal">Login</button>
         <div id="login-modal" class="modal" tabindex="-1" role="dialog">
           <div class="modal-dialog" role="document">
@@ -17,12 +17,12 @@
               </div>
               <div class="modal-body">
                 <div class="form-group">
-                  <label for="exampleInputEmail1">Email address</label>
-                  <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="Enter email">
+                  <label for="email">Username</label>
+                  <input v-model="username" type="text" class="form-control" id="username" aria-describedby="usernameHelp" placeholder="Enter emoncms username">
                 </div>
                 <div class="form-group">
-                  <label for="exampleInputPassword1">Password</label>
-                  <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
+                  <label for="password">Password</label>
+                  <input v-model="password" type="password" class="form-control" id="password" placeholder="Password">
                   <small id="emailHelp" class="form-text text-muted"><a href="https://emoncms.org/">Forgotton password?</a></small>
                 </div>
                 <div class="form-group form-check">
@@ -43,16 +43,23 @@
         <router-link to="/feeds" class="btn btn-success btn-lg">Feeds</router-link>
         <router-link to="/inputs" class="btn btn-success btn-lg">Inputs</router-link>
       </div>
+      {{ info }}
     </div>
 </template>
 
 <script>
+import axios from 'axios'
+
 export default {
   name: 'Login',
+  props: ['app'],
   data () {
     return {
       lead: 'Web-app for processing, logging and visualising energy, temperature and other environmental data',
-      intro: 'Emoncms is a powerful open-source web-app for processing, logging and visualising energy, temperature and other environmental data.'
+      intro: 'Emoncms is a powerful open-source web-app for processing, logging and visualising energy, temperature and other environmental data.',
+      info: 'start',
+      username: 'emrys',
+      password: '&PbYyfViBwy0iuk4o6xWu@25'
     }
   },
   i18n: { // `i18n` option, setup locale info for component
@@ -66,6 +73,13 @@ export default {
       event.preventDefault()
       // @todo: call the emoncms authenticate api endpoint
       var authenticated = true
+      this.info = 'loading'
+
+      axios({
+        method: 'post',
+        url: 'http://localhost:8888/auth/' + this.username + '/' + this.password,
+      }).then(response => (this.info = response))
+
       if (authenticated) {
         this.authenticate()
       } else {
@@ -74,10 +88,10 @@ export default {
     },
     authenticate: function () {
       global.$('#login-modal').modal('hide')
-      this.$parent.authenticated = true
+      this.app.authenticated = true
     },
     unauthenticate: function () {
-      this.$parent.authenticated = false
+      this.app.authenticated = false
     }
   }
 }

@@ -21,8 +21,7 @@ export default new Router({
     },
     {
       path: '/login',
-      component: Login,
-      props: {authenticated: this.authenticated}
+      component: Login
     },
     {
       path: '/logout',

@@ -17,6 +17,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Icons from '@/components/Icons'
 import Mqtt from '@/components/Mqtt'
+
 import 'bootstrap/dist/css/bootstrap.min.css'
 
 export default {
@@ -36,8 +37,8 @@ export default {
           client: false,
           status: [],
           connected: false,
-          pubTopic: 'user/emrys/request',
-          subTopic: 'user/emrys/response'
+          pubTopic: 'user/brynawelon/request',
+          subTopic: 'user/brynawelon/response'
         }
       }
     }
