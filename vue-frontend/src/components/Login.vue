@@ -58,8 +58,8 @@ export default {
       lead: 'Web-app for processing, logging and visualising energy, temperature and other environmental data',
       intro: 'Emoncms is a powerful open-source web-app for processing, logging and visualising energy, temperature and other environmental data.',
       info: 'start',
-      username: 'emrys',
-      password: '&PbYyfViBwy0iuk4o6xWu@25'
+      username: '',
+      password: ''
     }
   },
   i18n: { // `i18n` option, setup locale info for component
@@ -77,7 +77,7 @@ export default {
 
       axios({
         method: 'post',
-        url: 'http://localhost:8888/auth/' + this.username + '/' + this.password,
+        url: process.env.AUTH_URL + this.username + '/' + this.password
       }).then(response => (this.info = response))
 
       if (authenticated) {

@@ -3,6 +3,8 @@ return [
     'settings' => [
         'displayErrorDetails' => false, // set to false in production
         'addContentLengthHeader' => false, // Allow the web server to send the content-length header
+        'log.enable' => true,
+        'debug' => false,
 
         // Renderer settings
         'renderer' => [
@@ -17,3 +19,5 @@ return [
         ],
     ],
 ];
+
+

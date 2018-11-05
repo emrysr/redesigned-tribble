@@ -13,9 +13,18 @@ require __DIR__ . '/../vendor/autoload.php';
 
 session_start();
 
-// Instantiate the app
+$_ENV['mode'] = 'development';
 $settings = require __DIR__ . '/../src/settings.php';
+
+// Only invoked if mode is "production"
+if ($_ENV['mode'] === 'development') {
+    $production = require __DIR__ . '/../src/settings.production.php';
+    $settings = array_merge($settings, $production);
+};
+
+// Instantiate the app
 $app = new \Slim\App($settings);
+
 
 // Set up dependencies
 require __DIR__ . '/../src/dependencies.php';
