@@ -1,6 +1,6 @@
 {
-  "name": "emoncms",
-  "version": "1.0.0",
+  "name": "vue-frontend",
+  "version": "1.2.0",
   "description": "Web-app for processing, logging and visualising energy, temperature and other environmental data",
   "author": "Emrys <emrys@openenergymonitor.org>",
   "private": true,

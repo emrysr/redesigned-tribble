@@ -18,16 +18,19 @@
               <div class="modal-body">
                 <div class="form-group">
                   <label for="email">Username</label>
-                  <input v-model="username" type="text" class="form-control" id="username" aria-describedby="usernameHelp" placeholder="Enter emoncms username">
+                  <input v-model="app.mqtt.username" type="text" class="form-control" id="username" aria-describedby="usernameHelp" placeholder="Enter emoncms username">
                 </div>
                 <div class="form-group">
                   <label for="password">Password</label>
-                  <input v-model="password" type="password" class="form-control" id="password" placeholder="Password">
+                  <input v-model="app.mqtt.password" type="password" class="form-control" id="password" placeholder="Password">
                   <small id="emailHelp" class="form-text text-muted"><a href="https://emoncms.org/">Forgotton password?</a></small>
                 </div>
-                <div class="form-group form-check">
-                  <input type="checkbox" class="form-check-input" id="exampleCheck1">
-                  <label class="form-check-label" for="exampleCheck1">Remember me on this device</label>
+                <div v-if="error" class="alert alert-warning">
+                  {{error}}
+                </div>
+                <div v-if="false" class="form-group form-check">
+                  <input type="checkbox" class="form-check-input" id="rememberme">
+                  <label class="form-check-label" for="rememberme">Remember me</label>
                 </div>
               </div>
               <div class="modal-footer">
@@ -39,11 +42,9 @@
         </div>
       </div>
       <div v-else>
-        <h4>Welcome back Dave</h4>
         <router-link to="/feeds" class="btn btn-success btn-lg">Feeds</router-link>
         <router-link to="/inputs" class="btn btn-success btn-lg">Inputs</router-link>
       </div>
-      {{ info }}
     </div>
 </template>
 
@@ -57,47 +58,42 @@ export default {
     return {
       lead: 'Web-app for processing, logging and visualising energy, temperature and other environmental data',
       intro: 'Emoncms is a powerful open-source web-app for processing, logging and visualising energy, temperature and other environmental data.',
-      info: 'start',
-      username: '',
-      password: ''
+      error: ''
     }
   },
   i18n: { // `i18n` option, setup locale info for component
     messages: {
       en: { message: { hello: 'Welcome to ' } },
+      es: { message: { hello: 'Bienvenido a ' } },
+      fr: { message: { hello: 'Bienvenue à ' } },
       cy: { message: { hello: 'Croeso i ' } }
     }
   },
   methods: {
     login: function (event) {
       event.preventDefault()
-      // @todo: call the emoncms authenticate api endpoint
-      var authenticated = true
-      this.info = 'loading'
-
+      let that = this
       axios({
         method: 'post',
-        url: process.env.AUTH_URL + this.username + '/' + this.password
-      }).then(response => (this.info = response))
-
-      if (authenticated) {
-        this.authenticate()
-      } else {
-        this.unauthenticate()
-      }
+        url: (process.env.AUTH_URL + this.app.mqtt.username + '/' + this.app.mqtt.password)
+      }).then(function (response) {
+        let success = (response.data && response.data.success) || false
+        if (success) {
+          that.authenticate()
+        } else {
+          that.unauthenticate(response.data.message)
+        }
+      })
     },
     authenticate: function () {
       global.$('#login-modal').modal('hide')
       this.app.authenticated = true
+      this.error = ''
     },
-    unauthenticate: function () {
+    unauthenticate: function (message) {
       this.app.authenticated = false
+      this.error = message
     }
   }
 }
 </script>
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-
-</style>

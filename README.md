@@ -3,6 +3,10 @@
 
 vuejs and bootstrap 4 version of the emoncms UI. This project has no server side scripting all JS,HTML and CSS.
 
+# deploy
+PHP. upload the `/php-auth` directory to the web server and make `php-auth/public` the web accessible directory.
+`vue-frontend/npm run build` will put the built html and js into the `php-auth/public` directory
+
 # Install the project
 - `$ git clone git@github.com:emrysr/redesigned-tribble.git` clone my repo (or your fork)
 - `$ cd redesigned-tribble/emoncms` go to the project directory

@@ -5,42 +5,34 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       <router-link to="/" class="navbar-brand">
-      <small class="pr-2 position-absolute badge badge-rounded badge-info" style="margin-left:-2em">
+      <small v-if="false" class="pr-2 position-absolute badge badge-rounded badge-info" style="margin-left:-2em">
         <span class="d-block d-sm-none">xs</span>
         <span class="d-none d-sm-block d-md-none">sm</span>
         <span class="d-none d-md-block d-lg-none">md</span>
         <span class="d-none d-lg-block d-xl-none">lg</span>
         <span class="d-none d-xl-block">xl</span>
       </small>
+      <span id="mqttIndicator" class="rounded-circle d-inline-block" :class="{'bg-success':app.mqtt.connected,'bg-light':!app.mqtt.connected,'opaque':!app.mqtt.connected}"></span>
       {{$appName}}
       </router-link>
-      <div class="collapse navbar-collapse" id="mainNavbarToggler">
-        <Nav />
-
-        <Auth :authenticated="authenticated" />
-
-        <ApiKey />
-
-        <LocaleChanger class="ml-0 ml-sm-2" />
-      </div>
+      <Nav :app="app" />
     </div>
   </nav>
 </template>
 
 <script>
-import LocaleChanger from '@/components/LocaleChanger'
 import Nav from '@/components/Nav'
-import ApiKey from '@/components/ApiKey'
-import Auth from '@/components/Auth'
 
 export default {
+  props: ['app'],
   components: {
-    'LocaleChanger': LocaleChanger,
-    'Nav': Nav,
-    'ApiKey': ApiKey,
-    'Auth': Auth
+    'Nav': Nav
   },
-  props: ['authenticated'],
+  data: function () {
+    return {
+      isAdmin: false
+    }
+  },
   name: 'Navbar',
   mounted () {
     this.$nextTick(() => {
@@ -49,3 +41,12 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+#mqttIndicator {
+  font-size:1rem;
+  width:1rem;
+  height:1rem;
+}
+.opaque{opacity:.2}
+</style>

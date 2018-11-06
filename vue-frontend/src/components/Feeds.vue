@@ -16,21 +16,16 @@
         </div>
       </div>
 
-      <transition name="fade" v-if="localApiKey.length > 0 && errors.length==0">
+      <transition name="fade" v-if="errors.length==0">
         <FeedlistToolbar v-if="nodes.length>0" :nodes="nodes"/>
       </transition>
     </div>
   </section>
-
-  <div v-if="localApiKey.length == 0" class="alert alert-warning">
-    <h4>Empty API key</h4>
-    Please enter in your API key. Your API key is found on your <a href="http://localhost/emoncms/user/view" title="emoncms user account page" target="_blank">account page</a>.
-  </div>
-  <div v-else>
+  <div v-if="errors.length > 0">
     <div class="alert alert-danger" v-for="error in errors" v-bind:key="error">{{ error }}</div>
     <button v-if="errors.length>0" @click="getFeedData()" class="btn btn-lg btn-primary">Retry</button>
   </div>
-  <div id="feedlist" v-if="localApiKey.length > 0 && errors.length==0" name="bounce">
+  <div v-else id="feedlist" name="bounce">
     <Node v-for="node in nodes"
       v-bind:key="node.name"
       v-bind:node="node"
@@ -46,6 +41,7 @@ import FeedTooltip from '@/components/FeedTooltip'
 import Node from '@/components/Node'
 import camelCase from 'camelcase'
 import jsonSize from 'json-size'
+import { mqtt } from './mixins/mqtt'
 
 export default {
   name: 'Feeds',
@@ -54,6 +50,7 @@ export default {
     'FeedTooltip': FeedTooltip,
     'Node': Node
   },
+  mixins: [mqtt],
   props: ['app'],
   data () {
     return {
@@ -66,7 +63,6 @@ export default {
       autoreloadInterval: null,
       status: [],
       counter: 0,
-      localApiKey: this.app.apikey,
       engines: {
         MYSQL: 0,
         TIMESTORE: 1, // Depreciated
@@ -126,9 +122,7 @@ export default {
       this.app.mqtt.client.on('message', this.onMessage)
     },
     publish: function () {
-      if (!this.app.mqtt.connected) {
-        this.connect()
-      } else {
+      if (this.app.mqtt.connected) {
         var command = process.env.ROOT_API + '/feed/list.json'
         this.app.mqtt.client.publish(this.app.mqtt.pubTopic, command)
         this.app.mqtt.status.push('publishing ' + command + ' to ' + this.app.mqtt.pubTopic)
@@ -136,9 +130,7 @@ export default {
       }
     },
     subscribe: function () {
-      if (!this.app.mqtt.connected) {
-        this.connect()
-      } else {
+      if (this.app.mqtt.connected) {
         this.app.mqtt.client.subscribe(this.app.mqtt.subTopic)
       }
     },
@@ -241,17 +233,12 @@ export default {
       // this.status.push('parsed data', JSON.parse(JSON.stringify(Object.values(nodes))))
     },
     getFeedData: function () {
-      if (!this.app.apikey) throw new Error('apikey not available')
       this.errors = []
       // start it all off by sending the request to the mqtt server
       this.publish()
     }
   },
   watch: {
-    apikey: function (val) {
-      this.app.apikey = val
-      this.getFeedData()
-    },
     autoreload: function (val) {
       window.clearInterval(this.autoreloadInterval)
       if (!val) {

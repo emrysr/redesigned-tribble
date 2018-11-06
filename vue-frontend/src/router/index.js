@@ -1,11 +1,10 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 // components used in router view
-import Login from '@/components/Login'
+import Welcome from '@/components/Welcome'
 import Logout from '@/components/Logout'
-import Inputs from '@/components/Inputs'
 import Feeds from '@/components/Feeds'
-import HelloWorld from '@/components/HelloWorld'
+import Inputs from '@/components/Inputs'
 
 Vue.use(Router)
 
@@ -16,27 +15,20 @@ export default new Router({
       redirect: '/login'
     },
     {
-      path: '/dev',
-      component: HelloWorld
-    },
-    {
       path: '/login',
-      component: Login
+      component: Welcome
     },
     {
       path: '/logout',
-      component: Logout,
-      props: {authenticated: this.authenticated}
+      component: Logout
     },
     {
       path: '/feeds',
-      component: Feeds,
-      props: {config: this.config}
+      component: Feeds
     },
     {
       path: '/inputs',
-      component: Inputs,
-      props: {apikey: this.apikey, authenticated: this.authenticated}
+      component: Inputs
     }
   ],
   linkActiveClass: 'active'
