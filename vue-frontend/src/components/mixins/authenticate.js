@@ -12,7 +12,7 @@ export const auth = {
       let that = this
       axios({
         method: 'post',
-        url: (process.env.AUTH_URL + this.app.mqtt.username + '/' + this.app.mqtt.password)
+        url: (process.env.AUTH_URL + this.store.mqtt.username + '/' + this.store.mqtt.password)
       }).then(function (response) {
         let success = (response.data && response.data.success) || false
         if (success) {
@@ -24,11 +24,11 @@ export const auth = {
     },
     authenticate: function () {
       global.$('#login-modal').modal('hide')
-      this.app.authenticated = true
+      this.store.authenticated = true
       this.error = ''
     },
     unauthenticate: function (message) {
-      this.app.authenticated = false
+      this.store.authenticated = false
       this.error = message
     }
   }

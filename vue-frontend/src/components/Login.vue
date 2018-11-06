@@ -12,11 +12,11 @@
                 <div class="modal-body">
                 <div class="form-group">
                     <label for="email">{{ $t('message.username') }}</label>
-                    <input v-model="app.mqtt.username" type="text" class="form-control" id="username" aria-describedby="usernameHelp" placeholder="Enter emoncms username" required>
+                    <input v-model="store.mqtt.username" type="text" class="form-control" id="username" aria-describedby="usernameHelp" placeholder="Enter emoncms username" required>
                 </div>
                 <div class="form-group">
                     <label for="password">{{ $t('message.password') }}</label>
-                    <input v-model="app.mqtt.password" type="password" class="form-control" id="password" placeholder="Password" required>
+                    <input v-model="store.mqtt.password" type="password" class="form-control" id="password" placeholder="Password" required>
                     <small id="emailHelp" class="form-text text-muted"><a href="https://emoncms.org/">Forgotton password?</a></small>
                 </div>
                 <div v-if="error" class="alert alert-warning">

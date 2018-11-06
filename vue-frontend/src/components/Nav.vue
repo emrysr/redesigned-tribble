@@ -9,12 +9,12 @@
       </router-link>
     </ul>
     <ul class="navbar-nav">
-      <li v-if="app.authenticated" class="nav-item dropdown">
+      <li v-if="store.authenticated" class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          {{ app.mqtt.username }}
+          {{ store.mqtt.username }}
         </a>
         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-          <router-link v-if="app.authenticated" class="dropdown-item" to="/logout">{{$t("message.logout")}}</router-link>
+          <router-link v-if="store.authenticated" class="dropdown-item" to="/logout">{{$t("message.logout")}}</router-link>
         </div>
       </li>
       <li class="nav-item">

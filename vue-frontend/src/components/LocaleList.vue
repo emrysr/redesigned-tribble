@@ -26,7 +26,7 @@ export default {
   // watch: {
   //   lang: function (val) {
   //     localStorage.setItem('lang', val)
-  //     this.app.lang = val
+  //     this.store.lang = val
   //   }
   // }
 }

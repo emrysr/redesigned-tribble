@@ -18,7 +18,7 @@ export default {
     }
   },
   mounted () {
-    this.app.authenticated = false
+    this.store.authenticated = false
   }
 
 }

@@ -30,7 +30,7 @@ export default {
   },
   data () {
     return {
-      app: {
+      store: {
         lang: 'en',
         authenticated: false,
         mqtt: {

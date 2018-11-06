@@ -13,7 +13,7 @@
       </span>
     </div>
     <div class="container d-flex justify-content-center">
-      <small class="text-muted text-center">{{ app.mqtt.status[app.mqtt.status.length - 1] }}</small>
+      <small class="text-muted text-center">{{ store.mqtt.status[store.mqtt.status.length - 1] }}</small>
     </div>
   </nav>
 </template>

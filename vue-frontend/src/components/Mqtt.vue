@@ -13,7 +13,7 @@ export default {
   mixins: [mqtt],
   watch: {
     app: function (newVal) {
-      console.log(this.app.mqtt.connected)
+      console.log(this.store.mqtt.connected)
     }
   },
   i18n: { // `i18n` option, setup locale info for component

@@ -4,7 +4,7 @@
     <p class="lead">{{lead}}</p>
     <hr class="my-4">
     <p>{{intro}}</p>
-    <div v-if="!app.authenticated">
+    <div v-if="!store.authenticated">
       <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#login-modal">Login</button>
       <Login :app="app" />
     </div>
