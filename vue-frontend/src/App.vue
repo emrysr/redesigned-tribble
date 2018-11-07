@@ -24,9 +24,6 @@ export default {
     'Navbar': Navbar,
     'Footer': Footer,
     'Icons': Icons
-  },
-  mounted: function () {
-    this.$root.$data.auth.user = JSON.parse(localStorage.getItem('user'))
   }
 }
 </script>

@@ -6,25 +6,24 @@ export const mqtt = {
   },
   methods: {
     mqtt_connect () {
-      console.log('m', JSON.stringify(this.$root.$data.auth))
       if (typeof this.MQTT !== 'function') {
         this.status.push(`ERROR: MQTT library not ready.`)
         return void 0
       }
-      if (this.$root.$data.mqtt.connected) {
+      if (this.mqtt.connected) {
         this.status.push(`NOTICE: already connected.`)
         return void 0
       }
-      if (!this.$root.$data.auth.user || this.$root.$data.auth.user.username === '') {
+      if (!this.auth.user || this.auth.user.username === '') {
         this.status.push(`ERROR: empty username.`)
         return void 0
       }
-      this.status.push(`connecting to: ${process.env.MQTT_PROTOCOL}://${this.$root.$data.auth.user.username}@${process.env.MQTT_HOST}:${process.env.MQTT_PORT}...`)
+      this.status.push(`connecting to: ${process.env.MQTT_PROTOCOL}://${this.auth.user.username}@${process.env.MQTT_HOST}:${process.env.MQTT_PORT}...`)
       var options = {
-        username: this.$root.$data.auth.user.username,
-        password: this.$root.$data.auth.user.password,
+        username: this.auth.user.username,
+        password: this.auth.user.password,
         useSSL: false,
-        clientId: this.$root.$data.auth.user.username + '_' + Math.random().toString(16).substr(2, 8)
+        clientId: this.auth.user.username + '_' + Math.random().toString(16).substr(2, 8)
       }
       this.client = this.MQTT.connect(`${process.env.MQTT_PROTOCOL}://${process.env.MQTT_HOST}:${process.env.MQTT_PORT}`, options)
       this.client.on('disconnect', this.onDisconnect)
@@ -44,18 +43,18 @@ export const mqtt = {
   computed: {
     client: {
       get: function () {
-        return this.$root.$data.mqtt.client
+        return this.mqtt.client
       },
       set: function (newVal) {
-        this.$root.$data.mqtt.client = newVal
+        this.mqtt.client = newVal
       }
     },
     status: {
       get: function () {
-        return this.$root.$data.mqtt.status
+        return this.mqtt.status
       },
       set: function (newVal) {
-        this.$root.$data.mqtt.status = newVal
+        this.$store.commit('status', newVal)
       }
     }
 

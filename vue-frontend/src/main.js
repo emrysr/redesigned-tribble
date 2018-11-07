@@ -1,13 +1,13 @@
 // The Vue build version to load with the `import` command
 // (runtime-only or standalone) has been set in webpack.base.conf with an alias.
 import Vue from 'vue'
-import store from './store'
 import App from './App'
 import router from './router'
 import jQuery from 'jquery'
 import 'bootstrap/dist/css/bootstrap.css'
 import Vuex from 'vuex'
 import VueI18n from 'vue-i18n'
+import {store} from './store'
 
 Vue.use(VueI18n) // multilingual addon
 Vue.use(Vuex) // state store addon
@@ -42,8 +42,11 @@ const messages = {
     }
   }
 }
+// load stored lang or default to english
 Vue.config.lang = localStorage.getItem('lang') || 'en'
-store.auth.user = JSON.parse(localStorage.getItem('user'))
+
+// load user from local storage if available
+store.commit('user', JSON.parse(localStorage.getItem('user')))
 
 // Create VueI18n instance with options
 // eslint-disable-next-line no-unused-vars
@@ -62,9 +65,9 @@ new Vue({
   el: '#app',
   router,
   i18n,
+  store,
   components: { App },
-  template: '<App/>',
-  data: store
+  template: '<App/>'
 })
 
 // @todo: add touch/swipe actions

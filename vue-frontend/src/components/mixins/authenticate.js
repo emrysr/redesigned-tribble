@@ -8,6 +8,16 @@ export const auth = {
       password: ''
     }
   },
+  computed: {
+    user: {
+      get: function () {
+        return this.auth.user
+      },
+      set: function (newVal) {
+        this.$store.commit('user', newVal)
+      }
+    }
+  },
   methods: {
     login: function (event) {
       event.preventDefault()
@@ -36,13 +46,13 @@ export const auth = {
         apikey_read: data.apikey_read
       }
       localStorage.setItem('user', JSON.stringify(user))
-      this.$root.$data.auth.user = user
+      this.user = user
       this.error = ''
       // if (typeof this.connect === 'function') this.connect()
     },
     unauthenticate: function (message) {
       this.error = message
-      this.$root.$data.auth.user = null
+      this.user = null
       localStorage.removeItem('user')
       // if (typeof this.disconnect === 'function') this.disconnect()
     }

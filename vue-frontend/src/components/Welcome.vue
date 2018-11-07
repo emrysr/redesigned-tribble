@@ -4,25 +4,21 @@
     <p class="lead">{{lead}}</p>
     <hr class="my-4">
     <p>{{intro}}</p>
-    <div v-if="!$root.$data.auth.user">
+    <div v-if="!this.auth.user">
       <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#login-modal">Login</button>
-      <Login :app="app" />
+      <Login />
     </div>
     <div v-else>
       <router-link to="/feeds" class="btn btn-success btn-lg">Feeds</router-link>
       <router-link to="/inputs" class="btn btn-success btn-lg">Inputs</router-link>
-      <!-- <br>
-      <div class="border rounded p-3 d-inline-block mt-3">
-        username: {{ $root.$data.auth.user.username }}<br>
-        password: {{ '*'.repeat($root.$data.auth.user.password.length > 4 ? $root.$data.auth.user.password.length - 4 : 0) }} {{ $root.$data.auth.user.password.substr(-4) }}
-      </div> -->
-
     </div>
-
+    <pre>{{ mqtt.status }}</pre>
+    <code>{{ auth.user }}</code>
   </div>
 </template>
 
 <script>
+import { mapState } from 'vuex'
 import Login from '@/components/Login'
 
 export default {
@@ -30,7 +26,7 @@ export default {
   components: {
     'Login': Login
   },
-  props: ['app'],
+  computed: mapState(['lang', 'auth', 'mqtt']),
   data () {
     return {
       lead: 'Web-app for processing, logging and visualising energy, temperature and other environmental data',

@@ -12,7 +12,7 @@
         <span class="d-none d-lg-block d-xl-none">lg</span>
         <span class="d-none d-xl-block">xl</span>
       </small>
-      <span id="mqttIndicator" class="rounded-circle d-inline-block" :class="{'bg-success':$root.$data.mqtt.connected,'bg-light':!$root.$data.mqtt.connected,'opaque':!this.$root.$data.mqtt.connected}"></span>
+      <span id="mqttIndicator" class="rounded-circle d-inline-block" :class="{'bg-success':this.mqtt.connected,'bg-light':!this.mqtt.connected,'opaque':!this.mqtt.connected}"></span>
       {{$appName}}
       </router-link>
       <Nav />
@@ -21,6 +21,7 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
 import Nav from '@/components/Nav'
 
 export default {
@@ -32,6 +33,7 @@ export default {
       isAdmin: false
     }
   },
+  computed: mapState(['lang', 'auth', 'mqtt']),
   name: 'Navbar',
   mounted () {
     this.$nextTick(() => {

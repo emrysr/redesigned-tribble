@@ -16,7 +16,7 @@
     <div class="container d-flex justify-content-center justify-content-between">
       <button class="btn btn-outline-secondary btn-sm" @click="liveStatus=false;statusIndex = 0">First</button>
       <button class="btn btn-outline-secondary btn-sm" @click="liveStatus=false;statusIndex--">Prev</button>
-      <small class="text-muted text-center w-75">{{ statusIndex + 1 }} / {{ status.length }} {{ statusItem() }} </small>
+      <small class="text-muted text-center w-75">{{ statusIndex + 1 }} / {{ mqtt.status.length }} {{ statusItem() }} </small>
       <button class="btn btn-outline-secondary btn-sm" @click="liveStatus=false;statusIndex++">Next</button>
       <button class="btn btn-outline-secondary btn-sm" @click="liveStatus=true;statusIndex = status.length - 1">Last</button>
     </div>
@@ -24,6 +24,8 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
+
 export default {
   name: 'Footer',
   props: ['app'],
@@ -38,21 +40,17 @@ export default {
       ]
     }
   },
-  computed: {
-    status: function () {
-      return this.$root.$data.mqtt.status
-    }
-  },
+  computed: mapState(['lang', 'auth', 'mqtt']),
   methods: {
     statusItem: function () {
-      if (this.statusIndex > (this.status.length - 1)) this.statusIndex = 0
-      if (this.statusIndex < 0) this.statusIndex = this.status.length - 1
-      if (this.liveStatus) this.statusIndex = this.status.length - 1
-      return this.status[this.statusIndex]
+      if (this.statusIndex > (this.mqtt.status.length - 1)) this.statusIndex = 0
+      if (this.statusIndex < 0) this.statusIndex = this.mqtt.status.length - 1
+      if (this.liveStatus) this.statusIndex = this.mqtt.status.length - 1
+      return this.mqtt.status[this.statusIndex]
     }
   },
   mounted: function () {
-    this.statusIndex = this.status.length - 1
+    this.statusIndex = this.mqtt.status.length - 1
   }
 }
 </script>

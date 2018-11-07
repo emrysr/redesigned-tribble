@@ -83,7 +83,7 @@ export default {
       }
     },
     username: function () {
-      return this.$root.$data.auth.user.username || JSON.parse(localStorage.getItem('user')).username || 'emrys'
+      return this.$root.$data.auth.user.username || JSON.parse(localStorage.getItem('user')).username
     },
     pubTopic: function () {
       return `user/${this.username}/response`

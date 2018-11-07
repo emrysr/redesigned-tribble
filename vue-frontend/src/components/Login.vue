@@ -32,28 +32,20 @@
                 <button type="submit" class="btn btn-primary">Login</button>
                 </div>
             </form>
+
         </div>
     </div>
 </template>
 
 <script>
+import { mapState } from 'vuex'
 import { auth } from '@/components/mixins/authenticate' // eslint-disable-line no-unused-vars, no-undef
 import { mqtt } from '@/components/mixins/mqtt' // eslint-disable-line no-unused-vars, no-undef
 
 export default {
   name: 'Login',
   mixins: [auth, mqtt],
-  data: function () {
-    return {
-      username: '',
-      password: ''
-    }
-  },
-  computed: {
-    status: function () {
-      return this.$root.$data.mqtt.status
-    }
-  },
+  computed: mapState(['lang', 'auth', 'mqtt']),
   i18n: {
     messages: {
       en: { message: {

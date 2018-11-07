@@ -10,14 +10,14 @@
     </ul>
     <ul class="navbar-nav">
       <li class="nav-item">
-        <LocaleList :app="app" />
+        <LocaleList />
       </li>
-      <li v-if="$root.$data.auth.user" class="nav-item dropdown">
+      <li v-if="this.auth.user" class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          {{ $root.$data.auth.user.username }}
+          {{ this.auth.user.username }}
         </a>
         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-          <router-link v-if="$root.$data.auth.user" class="dropdown-item" to="/logout">{{$t("message.logout")}}</router-link>
+          <router-link v-if="this.auth.user" class="dropdown-item" to="/logout">{{$t("message.logout")}}</router-link>
         </div>
       </li>
     </ul>
@@ -25,6 +25,7 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
 import LocaleList from '@/components/LocaleList'
 
 export default {
@@ -32,7 +33,7 @@ export default {
   components: {
     'LocaleList': LocaleList
   },
-  props: ['app'],
+  computed: mapState(['lang', 'auth', 'mqtt']),
   data: function () {
     return {
       links: [
