@@ -4,21 +4,31 @@ import logging
 import sys
 import time
 import ssl
-
 import requests as requests
-
 import paho.mqtt.client as paho
+
+#-----------------------------------------------------------
+#-      SETTINGS
+#-----------------------------------------------------------
+
+username = "megni" # mqtt authentication
+password = "megni" # mqtt authentication
+apikey = "cb9579be83678b89a5eb0faea08ad839" # local emoncms api key
+port = 8883
+
+#-----------------------------------------------------------
+
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 #mqtt production settings
 mqtt = {
     "host" : "mqtt.emoncms.org",
-    "username" : "emrys",
-    "password" : "emrys",
-    "port" : 8883,
-    "pubTopic" : "user/emrys/response",
-    "subTopic" : "user/emrys/request",
+    "username" : "megni",
+    "password" : "megni",
+    "port" : port,
+    "pubTopic" : "user/%s/response" % username,
+    "subTopic" : "user/%s/request" % username,
     "retry" : 5,
     "delay" : 2,
     "counter" : 0,
@@ -32,9 +42,9 @@ mqtt2 = {
     "host" : "localhost",
     "username" : "",
     "password" : "",
-    "port" : 1883,
-    "pubTopic" : "user/emrys/response",
-    "subTopic" : "user/emrys/request",
+    "port" : port,
+    "pubTopic" : "user/%s/response" % username,
+    "subTopic" : "user/%s/request" % username,
     "retry" : 5,
     "delay" : 2,
     "counter" : 0,
@@ -50,7 +60,7 @@ emoncms = {
     "port" : "80",
     "path" : "/emoncms/feed/list.json",
     "parameters" : "?",
-    "apikey" : "cb9579be83678b89a5eb0faea08ad839"
+    "apikey" : apikey
 }
 logging.debug("Settings: %s, %s, %s, %s. TLS:%s", mqtt["clientId"], mqtt["host"], mqtt["pubTopic"], mqtt["subTopic"], mqtt["tls"])
 
@@ -205,7 +215,7 @@ def call_api(msg):
     logging.debug("Sending API call")
     json_data = json.loads(msg.payload.decode("utf-8"))
     # merge the default settings with ones passed in the mqtt topic
-    data = {**emoncms, **json_data}
+    data = merge_two_dicts(emoncms, json_data)
 
     uri = "%s%s:%s%s%s&apikey=%s" % (data["protocol"], data["host"], data["port"], data["path"], data["parameters"], data["apikey"])
     logging.debug("Sending API request %s" % uri)
@@ -274,6 +284,10 @@ def connect():
     mqtt["client"].username_pw_set(mqtt["username"], mqtt["password"])
     mqtt["client"].connect(mqtt["host"], mqtt["port"], 60)  # connect
 
+def merge_two_dicts(x, y):
+    z = x.copy()   # start with x's keys and values
+    z.update(y)    # modifies z with y's keys and values & returns None
+    return z
 
 
 initialize()

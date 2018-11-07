@@ -13,7 +13,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 session_start();
 
-$_ENV['mode'] = 'development';
+$_ENV['mode'] = 'production';
 $settings = require __DIR__ . '/../src/settings.php';
 
 // Only invoked if mode is "production"
