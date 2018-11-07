@@ -12,10 +12,10 @@
         <span class="d-none d-lg-block d-xl-none">lg</span>
         <span class="d-none d-xl-block">xl</span>
       </small>
-      <span id="mqttIndicator" class="rounded-circle d-inline-block" :class="{'bg-success':store.mqtt.connected,'bg-light':!store.mqtt.connected,'opaque':!store.mqtt.connected}"></span>
+      <span id="mqttIndicator" class="rounded-circle d-inline-block" :class="{'bg-success':$root.$data.mqtt.connected,'bg-light':!$root.$data.mqtt.connected,'opaque':!this.$root.$data.mqtt.connected}"></span>
       {{$appName}}
       </router-link>
-      <Nav :app="app" />
+      <Nav />
     </div>
   </nav>
 </template>
@@ -24,7 +24,6 @@
 import Nav from '@/components/Nav'
 
 export default {
-  props: ['app'],
   components: {
     'Nav': Nav
   },

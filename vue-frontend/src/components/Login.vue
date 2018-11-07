@@ -11,12 +11,12 @@
                 </div>
                 <div class="modal-body">
                 <div class="form-group">
-                    <label for="email">{{ $t('message.username') }}</label>
-                    <input v-model="store.mqtt.username" type="text" class="form-control" id="username" aria-describedby="usernameHelp" placeholder="Enter emoncms username" required>
+                    <label for="input_username">{{ $t('message.username') }}</label>
+                    <input v-model="username" type="text" class="form-control" name="username" id="input_username" aria-describedby="usernameHelp" placeholder="Enter emoncms username" required>
                 </div>
                 <div class="form-group">
-                    <label for="password">{{ $t('message.password') }}</label>
-                    <input v-model="store.mqtt.password" type="password" class="form-control" id="password" placeholder="Password" required>
+                    <label for="input_password">{{ $t('message.password') }}</label>
+                    <input v-model="password" type="password" class="form-control" name="password" id="input_password" placeholder="Password" required>
                     <small id="emailHelp" class="form-text text-muted"><a href="https://emoncms.org/">Forgotton password?</a></small>
                 </div>
                 <div v-if="error" class="alert alert-warning">
@@ -37,12 +37,23 @@
 </template>
 
 <script>
-import { auth } from './mixins/authenticate'
+import { auth } from '@/components/mixins/authenticate' // eslint-disable-line no-unused-vars, no-undef
+import { mqtt } from '@/components/mixins/mqtt' // eslint-disable-line no-unused-vars, no-undef
 
 export default {
   name: 'Login',
-  props: ['app'],
-  mixins: [auth],
+  mixins: [auth, mqtt],
+  data: function () {
+    return {
+      username: '',
+      password: ''
+    }
+  },
+  computed: {
+    status: function () {
+      return this.$root.$data.mqtt.status
+    }
+  },
   i18n: {
     messages: {
       en: { message: {

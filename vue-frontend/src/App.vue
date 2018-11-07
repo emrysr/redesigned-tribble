@@ -1,19 +1,17 @@
 <template>
   <div id="app" class="mt-3">
-    <main :class="{'bg-dark':!app.authenticated}">
-      <!-- <Mqtt :app="app" /> -->
-      <Navbar :app="app" />
+    <main>
+      <Navbar />
       <div class="container mt-4">
-        <router-view :app="app" />
+        <router-view /><!-- see router/index.js to see which component is loaded -->
       </div>
-      <Footer :app="app" />
+      <Footer />
     </main>
     <Icons /><!-- list of svg icons -->
   </div>
 </template>
 
 <script>
-// import Mqtt from '@/components/Mqtt'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import Icons from '@/components/Icons'
@@ -23,25 +21,12 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 export default {
   name: 'App',
   components: {
-    // 'Mqtt': Mqtt,
     'Navbar': Navbar,
     'Footer': Footer,
     'Icons': Icons
   },
-  data () {
-    return {
-      store: {
-        lang: 'en',
-        authenticated: false,
-        mqtt: {
-          client: false,
-          status: [],
-          connected: false,
-          username: '',
-          password: ''
-        }
-      }
-    }
+  mounted: function () {
+    this.$root.$data.auth.user = JSON.parse(localStorage.getItem('user'))
   }
 }
 </script>

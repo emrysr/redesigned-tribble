@@ -4,14 +4,21 @@
     <p class="lead">{{lead}}</p>
     <hr class="my-4">
     <p>{{intro}}</p>
-    <div v-if="!store.authenticated">
+    <div v-if="!$root.$data.auth.user">
       <button class="btn btn-primary btn-lg" data-toggle="modal" data-target="#login-modal">Login</button>
       <Login :app="app" />
     </div>
     <div v-else>
       <router-link to="/feeds" class="btn btn-success btn-lg">Feeds</router-link>
       <router-link to="/inputs" class="btn btn-success btn-lg">Inputs</router-link>
+      <!-- <br>
+      <div class="border rounded p-3 d-inline-block mt-3">
+        username: {{ $root.$data.auth.user.username }}<br>
+        password: {{ '*'.repeat($root.$data.auth.user.password.length > 4 ? $root.$data.auth.user.password.length - 4 : 0) }} {{ $root.$data.auth.user.password.substr(-4) }}
+      </div> -->
+
     </div>
+
   </div>
 </template>
 

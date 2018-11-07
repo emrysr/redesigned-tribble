@@ -5,15 +5,10 @@
     <div class="display-4 d-sm-flex justify-content-between align-items-end">
       <div>
         {{ $t("message.feeds") }}:
-        <div class="btn-group" role="status">
-          <button class="btn" :class="{active: store.mqtt.connected, 'btn-outline-success': store.mqtt.connected, 'btn-outline-secondary': !store.mqtt.connected}" @click="disconnect()">
-            {{ !store.mqtt.connected ? 'Connecting&hellip;' : 'Connected' }}
-          </button>
-          <input id="autorefresh" class="form-check-input invisible" type="checkbox" v-model="autoreload" autocomplete="off">
-          <label for="autorefresh" class="btn btn-outline-primary mb-0" :class="{active: autoreload}" style="font-size: 1rem" :title="'Loaded content '+counter+' times @ '+(autoreloadDelay/1000)+'s intervals'">
-            Live ({{ autoreload  ? 'on': 'off' }})
-          </label>
-        </div>
+        <input id="autorefresh" class="form-check-input invisible" type="checkbox" v-model="autoreload" autocomplete="off">
+        <label for="autorefresh" class="btn btn-outline-primary mb-0" :class="{active: autoreload}" style="font-size: 1rem" :title="'Loaded content '+counter+' times @ '+(autoreloadDelay/1000)+'s intervals'">
+          Live ({{ autoreload  ? 'on': 'off' }})
+        </label>
       </div>
 
       <transition name="fade" v-if="errors.length==0">
@@ -41,7 +36,6 @@ import FeedTooltip from '@/components/FeedTooltip'
 import Node from '@/components/Node'
 import camelCase from 'camelcase'
 import jsonSize from 'json-size'
-import { mqtt } from './mixins/mqtt'
 
 export default {
   name: 'Feeds',
@@ -50,7 +44,6 @@ export default {
     'FeedTooltip': FeedTooltip,
     'Node': Node
   },
-  mixins: [mqtt],
   props: ['app'],
   data () {
     return {
@@ -61,7 +54,6 @@ export default {
       autoreload: false,
       autoreloadDelay: 5000,
       autoreloadInterval: null,
-      status: [],
       counter: 0,
       engines: {
         MYSQL: 0,
@@ -88,6 +80,23 @@ export default {
           }
         })
         return engineName
+      }
+    },
+    username: function () {
+      return this.$root.$data.auth.user.username || JSON.parse(localStorage.getItem('user')).username || 'emrys'
+    },
+    pubTopic: function () {
+      return `user/${this.username}/response`
+    },
+    subTopic: function () {
+      return `user/${this.username}/request`
+    },
+    status: {
+      get: function () {
+        return this.$root.$data.mqtt.status
+      },
+      set: function (newVal) {
+        this.$root.$data.mqtt.status.push(JSON.stringify(newVal))
       }
     }
   },
@@ -116,58 +125,59 @@ export default {
     }
   },
   methods: {
-    connect: function () {
-      if (!this.store.mqtt.client) throw new Error('mqtt client not initialized')
-      this.store.mqtt.client.on('connect', this.onConnect)
-      this.store.mqtt.client.on('message', this.onMessage)
-    },
     publish: function () {
-      if (this.store.mqtt.connected) {
-        var command = process.env.ROOT_API + '/feed/list.json'
-        this.store.mqtt.client.publish(this.store.mqtt.pubTopic, command)
-        this.store.mqtt.status.push('publishing ' + command + ' to ' + this.store.mqtt.pubTopic)
-        this.store.mqtt.connected = true
+      if (this.$root.$data.mqtt.connected) {
+        let params = {
+          port: 80
+        }
+        this.$root.$data.mqtt.client.publish(this.pubTopic, params)
+        this.$root.$data.mqtt.status.push('publishing ' + JSON.stringify(params) + ' to ' + this.pubTopic)
+        this.$root.$data.mqtt.connected = true
       }
     },
     subscribe: function () {
-      if (this.store.mqtt.connected) {
-        this.store.mqtt.client.subscribe(this.store.mqtt.subTopic)
+      if (this.$root.$data.mqtt.connected) {
+        this.$root.$data.mqtt.status.push(`subscribing to topic: user/${this.$root.$data.auth.user.username}/response`)
+        this.$root.$data.mqtt.client.subscribe(`user/${this.$root.$data.auth.user.username}/response`)
       }
     },
     disconnect: function () {
       // @todo: this should unsubscribe and disconnect from subClient & pubClient
       let that = this
-      let options = {
+      var options = {
         onSuccess: function () {
-          that.store.mqtt.subscribed = false
+          that.$root.$data.mqtt.subscribed = false
         }
       }
-      this.store.mqtt.client.unsubscribe(this.store.mqtt.pubTopic, options)
-      this.store.mqtt.client.disconnect()
-      this.store.mqtt.disconnect()
+      if (this.$root.$data.mqtt.client) {
+        this.$root.$data.mqtt.client.unsubscribe(this.$root.$data.mqtt.pubTopic, options)
+        this.$root.$data.mqtt.client.disconnect()
+        this.$root.$data.mqtt.disconnect()
+      }
     },
     onConnect: function (connack) {
-      this.store.mqtt.status.push('connected to broker', connack)
+      this.$root.$data.mqtt.connected = true
+      this.$root.$data.mqtt.status.push('connected to broker', connack)
       if (connack.returnCode > 0) {
-        this.store.mqtt.status.push('unable to connect to: ' + this.store.mqtt.pubTopic)
-        this.store.mqtt.connected = false
+        this.$root.$data.mqtt.status.push('unable to connect to: ' + this.$root.$data.mqtt.pubTopic)
+        this.$root.$data.mqtt.connected = false
       } else {
-        this.store.mqtt.connected = true
+        this.$root.$data.mqtt.connected = true
         this.subscribe()
         this.publish()
       }
     },
     onDisconnect: function (connack) {
-      this.store.mqtt.status.push('disconnect callback', connack)
+      this.$root.$data.mqtt.status.push('disconnect callback', connack)
       if (connack.returnCode > 0) {
-        this.store.mqtt.status.push('unable to disconnect to: ' + this.store.mqtt.pubTopic)
-        this.store.mqtt.connected = true
+        this.$root.$data.mqtt.status.push('unable to disconnect to: ' + this.$root.$data.mqtt.pubTopic)
+        this.$root.$data.mqtt.connected = true
       } else {
-        this.store.mqtt.connected = false
+        this.$root.$data.mqtt.connected = false
       }
     },
     onMessage: function (topic, message) {
-      this.store.mqtt.status.push('data received from: " ' + topic + '" (' + Number(jsonSize(message) / 1024).toFixed(2) + 'KB)')
+      this.$root.$data.mqtt.status.push('data received from: " ' + topic + '" (' + Number(jsonSize(message) / 1024).toFixed(2) + 'KB)')
       this.processData(JSON.parse(message.toString()))
     },
     isSelected: function (feedId) {
@@ -235,7 +245,11 @@ export default {
     getFeedData: function () {
       this.errors = []
       // start it all off by sending the request to the mqtt server
-      this.publish()
+      if (!this.$root.$data.mqtt.subscribed) {
+        this.mqtt_connect()
+      } else {
+        this.publish()
+      }
     }
   },
   watch: {

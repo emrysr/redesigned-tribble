@@ -15,19 +15,8 @@ export default {
     flipLang: function (lang, event) {
       event.preventDefault()
       this.$i18n.locale = lang
+      localStorage.lang = lang
     }
   }
-  // ,
-  // computed: {
-  //   lang: function () {
-  //     return this.$i18n.locale
-  //   }
-  // },
-  // watch: {
-  //   lang: function (val) {
-  //     localStorage.setItem('lang', val)
-  //     this.store.lang = val
-  //   }
-  // }
 }
 </script>

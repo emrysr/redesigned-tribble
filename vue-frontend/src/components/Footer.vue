@@ -3,17 +3,22 @@
     <div class="container d-flex justify-content-center">
       <span class="navbar-text">
         <div class="btn-group" role="group" aria-label="footer links">
-          <router-link v-for="routes in links"
-             v-bind:key="routes.id"
-             :to="`${routes.page}`" class="btn btn-link btn-sm text-muted">{{routes.title}}</router-link>
-
-          <a href="https://github.com/emoncms/emoncms" class="btn btn-link btn-sm text-muted" title="Project Code" target="_blank">Source on Github</a>
-          <a href="https://emoncms.org" class="btn btn-link btn-sm text-muted" title="Project Site" target="_blank">emoncms.org 🄯 2019</a>
+          <a class="btn btn-link btn-sm text-muted"
+            :href="link.url"
+            :target="link.target"
+            v-for="link in links"
+            v-bind:key="link.url">
+              {{link.label}}
+          </a>
         </div>
       </span>
     </div>
-    <div class="container d-flex justify-content-center">
-      <small class="text-muted text-center">{{ store.mqtt.status[store.mqtt.status.length - 1] }}</small>
+    <div class="container d-flex justify-content-center justify-content-between">
+      <button class="btn btn-outline-secondary btn-sm" @click="liveStatus=false;statusIndex = 0">First</button>
+      <button class="btn btn-outline-secondary btn-sm" @click="liveStatus=false;statusIndex--">Prev</button>
+      <small class="text-muted text-center w-75">{{ statusIndex + 1 }} / {{ status.length }} {{ statusItem() }} </small>
+      <button class="btn btn-outline-secondary btn-sm" @click="liveStatus=false;statusIndex++">Next</button>
+      <button class="btn btn-outline-secondary btn-sm" @click="liveStatus=true;statusIndex = status.length - 1">Last</button>
     </div>
   </nav>
 </template>
@@ -24,10 +29,30 @@ export default {
   props: ['app'],
   data: function () {
     return {
+      statusIndex: 0,
+      liveStatus: true,
       links: [
-        {id: 1, page: '/', title: this.$appName}
+        {title: this.$appName, url: '/', label: this.$appName},
+        {title: 'Project Code', url: 'https://github.com/emoncms/emoncms', target: '_blank', label: 'Source on Github'},
+        {title: 'Project Site', url: 'https://emoncms.org', target: '_blank', label: 'emoncms.org 🄯 2019'}
       ]
     }
+  },
+  computed: {
+    status: function () {
+      return this.$root.$data.mqtt.status
+    }
+  },
+  methods: {
+    statusItem: function () {
+      if (this.statusIndex > (this.status.length - 1)) this.statusIndex = 0
+      if (this.statusIndex < 0) this.statusIndex = this.status.length - 1
+      if (this.liveStatus) this.statusIndex = this.status.length - 1
+      return this.status[this.statusIndex]
+    }
+  },
+  mounted: function () {
+    this.statusIndex = this.status.length - 1
   }
 }
 </script>

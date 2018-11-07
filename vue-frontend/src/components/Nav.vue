@@ -9,16 +9,16 @@
       </router-link>
     </ul>
     <ul class="navbar-nav">
-      <li v-if="store.authenticated" class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          {{ store.mqtt.username }}
-        </a>
-        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-          <router-link v-if="store.authenticated" class="dropdown-item" to="/logout">{{$t("message.logout")}}</router-link>
-        </div>
-      </li>
       <li class="nav-item">
         <LocaleList :app="app" />
+      </li>
+      <li v-if="$root.$data.auth.user" class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          {{ $root.$data.auth.user.username }}
+        </a>
+        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+          <router-link v-if="$root.$data.auth.user" class="dropdown-item" to="/logout">{{$t("message.logout")}}</router-link>
+        </div>
       </li>
     </ul>
   </div>

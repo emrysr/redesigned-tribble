@@ -24,6 +24,19 @@ counter = 0
 client = None
 tls = True
 
+clientId = "local"
+host = "localhost"
+username = ""
+password = ""
+port = 1883
+pubTopic = "user/emrys/response"
+subTopic = "user/emrys/request"
+retry = 5
+delay = 2
+counter = 0
+client = None
+tls = False
+
 logging.debug("Settings: %s, %s, %s, %s. TLS:%s", clientId, host, pubTopic, subTopic, tls)
 
 def initialize():
@@ -175,7 +188,17 @@ def call_api(msg):
     """
     logging.debug("Sending API call")
     request = msg.payload.decode("utf-8")
-    send_response(requests.get(request))
+logging.debug(request)
+    protocol = "http://"
+    host = "localhost"
+    port = "80"
+    path = "/feed/list.json"
+    parameters = ""
+    apikey = "cb9579be83678b89a5eb0faea08ad839"
+
+    uri = "%s%s:%s%s?%s&apikey=%s" % protocol, host, port, path, parameters, apikey
+
+    send_response(requests.get(uri))
 
 
 def send_response(response):

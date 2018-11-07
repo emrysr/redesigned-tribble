@@ -4,9 +4,9 @@ const prodEnv = require('./prod.env')
 
 module.exports = merge(prodEnv, {
   NODE_ENV: '"development"',
-  MQTT_PROTOCOL: '"wss"',
-  MQTT_HOST:'"mqtt.emoncms.org"',
-  MQTT_TLS: 'true',
-  MQTT_PORT: '8083',
+  MQTT_PROTOCOL: '"ws"',
+  MQTT_HOST:'"localhost"',
+  MQTT_TLS: 'false',
+  MQTT_PORT: '9001',
   AUTH_URL: '"http://localhost:8888/auth/"'
 })
