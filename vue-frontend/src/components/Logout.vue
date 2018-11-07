@@ -7,12 +7,13 @@
 </template>
 
 <script>
-import { auth } from './mixins/authenticate'
+import { auth } from '@/components/mixins/authenticate'
+import { mqtt } from '@/components/mixins/mqtt' // eslint-disable-line no-unused-vars, no-undef
 
 export default {
   name: 'Logout',
   props: ['app'],
-  mixins: [auth],
+  mixins: [auth, mqtt],
   i18n: {
     messages: {
       en: { message: { loggedOut: 'Logged Out', login: 'Login' } },
@@ -21,6 +22,7 @@ export default {
   },
   mounted () {
     this.unauthenticate(this.$t('loggedOut'))
+    this.disconnect()
   }
 }
 </script>

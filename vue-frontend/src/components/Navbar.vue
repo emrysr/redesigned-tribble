@@ -12,7 +12,9 @@
         <span class="d-none d-lg-block d-xl-none">lg</span>
         <span class="d-none d-xl-block">xl</span>
       </small>
-      <span id="mqttIndicator" class="rounded-circle d-inline-block" :class="{'bg-success':this.mqtt.connected,'bg-light':!this.mqtt.connected,'opaque':!this.mqtt.connected}"></span>
+      <span id="mqttIndicator" class="rounded-circle d-inline-block border"
+      :title="'connected: ' + mqtt.connected"
+      :class="{'bg-success':mqtt.connected,'bg-light':!mqtt.connected,'border-light':mqtt.connected,'opaque':!mqtt.connected}"></span>
       {{$appName}}
       </router-link>
       <Nav />

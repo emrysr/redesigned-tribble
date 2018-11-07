@@ -14,11 +14,11 @@
       </span>
     </div>
     <div class="container d-flex justify-content-center justify-content-between">
-      <button class="btn btn-outline-secondary btn-sm" @click="liveStatus=false;statusIndex = 0">First</button>
-      <button class="btn btn-outline-secondary btn-sm" @click="liveStatus=false;statusIndex--">Prev</button>
-      <small class="text-muted text-center w-75">{{ statusIndex + 1 }} / {{ mqtt.status.length }} {{ statusItem() }} </small>
-      <button class="btn btn-outline-secondary btn-sm" @click="liveStatus=false;statusIndex++">Next</button>
-      <button class="btn btn-outline-secondary btn-sm" @click="liveStatus=true;statusIndex = status.length - 1">Last</button>
+      <button class="btn btn-outline-secondary btn-sm" @click="navigate('first')">First</button>
+      <button class="btn btn-outline-secondary btn-sm" @click="navigate('prev')">Prev</button>
+      <small class="text-muted text-center col-12 col-sm-6 col-lg-8">{{ statusIndex + 1 }} / {{ mqtt.status.length }} {{ statusItem() }} </small>
+      <button class="btn btn-outline-secondary btn-sm" @click="navigate('next')">Next</button>
+      <button class="btn btn-outline-secondary btn-sm" @click="navigate('last')">Last</button>
     </div>
   </nav>
 </template>
@@ -47,6 +47,16 @@ export default {
       if (this.statusIndex < 0) this.statusIndex = this.mqtt.status.length - 1
       if (this.liveStatus) this.statusIndex = this.mqtt.status.length - 1
       return this.mqtt.status[this.statusIndex]
+    },
+    navigate: function (pos) {
+      this.liveStatus = false
+      if (pos === 'first') this.statusIndex = 0
+      if (pos === 'prev') this.statusIndex--
+      if (pos === 'next') this.statusIndex++
+      if (pos === 'last') {
+        this.statusIndex = this.mqtt.status.length - 1
+        this.liveStatus = true
+      }
     }
   },
   mounted: function () {

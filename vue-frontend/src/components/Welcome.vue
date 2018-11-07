@@ -12,13 +12,12 @@
       <router-link to="/feeds" class="btn btn-success btn-lg">Feeds</router-link>
       <router-link to="/inputs" class="btn btn-success btn-lg">Inputs</router-link>
     </div>
-    <pre>{{ mqtt.status }}</pre>
-    <code>{{ auth.user }}</code>
   </div>
 </template>
 
 <script>
 import { mapState } from 'vuex'
+import { mqtt } from '@/components/mixins/mqtt' // eslint-disable-line no-unused-vars, no-undef
 import Login from '@/components/Login'
 
 export default {
@@ -26,7 +25,8 @@ export default {
   components: {
     'Login': Login
   },
-  computed: mapState(['lang', 'auth', 'mqtt']),
+  mixins: [mqtt],
+  computed: mapState(['auth']),
   data () {
     return {
       lead: 'Web-app for processing, logging and visualising energy, temperature and other environmental data',

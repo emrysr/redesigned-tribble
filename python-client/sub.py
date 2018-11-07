@@ -11,56 +11,71 @@ import paho.mqtt.client as paho
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
-clientId = "pythonClient"
-host = "mqtt.emoncms.org"
-username = "emrys"
-password = "emrys"
-port = 8883
-pubTopic = "user/emrys/response"
-subTopic = "user/emrys/request"
-retry = 5
-delay = 2
-counter = 0
-client = None
-tls = True
+#mqtt production settings
+mqtt = {
+    "host" : "mqtt.emoncms.org",
+    "username" : "emrys",
+    "password" : "emrys",
+    "port" : 8883,
+    "pubTopic" : "user/emrys/response",
+    "subTopic" : "user/emrys/request",
+    "retry" : 5,
+    "delay" : 2,
+    "counter" : 0,
+    "client" : None,
+    "tls" : True
+}
+mqtt["clientId"] = "%s_python" % mqtt["username"]
 
-clientId = "local"
-host = "localhost"
-username = ""
-password = ""
-port = 1883
-pubTopic = "user/emrys/response"
-subTopic = "user/emrys/request"
-retry = 5
-delay = 2
-counter = 0
-client = None
-tls = False
+#mqtt dev settings
+mqtt2 = {
+    "host" : "localhost",
+    "username" : "",
+    "password" : "",
+    "port" : 1883,
+    "pubTopic" : "user/emrys/response",
+    "subTopic" : "user/emrys/request",
+    "retry" : 5,
+    "delay" : 2,
+    "counter" : 0,
+    "client" : None,
+    "tls" : False,
+    "clientId" : "local_dev"
+}
 
-logging.debug("Settings: %s, %s, %s, %s. TLS:%s", clientId, host, pubTopic, subTopic, tls)
+# emoncms settings
+emoncms = {
+    "protocol" : "http://",
+    "host" : "localhost",
+    "port" : "80",
+    "path" : "/emoncms/feed/list.json",
+    "parameters" : "?",
+    "apikey" : "cb9579be83678b89a5eb0faea08ad839"
+}
+logging.debug("Settings: %s, %s, %s, %s. TLS:%s", mqtt["clientId"], mqtt["host"], mqtt["pubTopic"], mqtt["subTopic"], mqtt["tls"])
 
 def initialize():
     """ init function with exception handling.
     client.loop_forever() keeps looping this code until stop_loop() called
 
     """
-    global client, clientId, delay
+    global mqtt
     try:
         logging.info("\nStart...")
 
-        client = paho.Client(clientId)
+        mqtt["client"] = paho.Client(mqtt["clientId"])
         
         logging.info("registering callbacks")
-        client.on_connect    = on_connect
-        client.on_message    = on_message
-        client.on_publish    = on_publish
-        client.on_subscribe  = on_subscribe
-        client.on_disconnect = on_disconnect
+        mqtt["client"].on_connect    = on_connect
+        mqtt["client"].on_message    = on_message
+        mqtt["client"].on_publish    = on_publish
+        mqtt["client"].on_subscribe  = on_subscribe
+        mqtt["client"].on_disconnect = on_disconnect
 
-        logging.info("Connecting to: %s " % host)
+        logging.info("Connecting to: %s " % mqtt["host"])
         
         connect()
-        client.loop_forever(timeout=delay)        
+        mqtt["client"].loop_forever(timeout = mqtt["delay"])        
 
     except TypeError as err:
         logging.debug('Error creating connection. %s' % err)
@@ -79,7 +94,7 @@ def initialize():
         logging.debug("Error: %s" % e)
 
     finally:
-        client.loop_stop()
+        mqtt["client"].loop_stop()
         logging.info("Exit\n")
         return
 
@@ -98,19 +113,19 @@ def on_connect(client, obj, flags, rc):
         rc -- response code
 
     """
-    global counter, retry, delay
+    global mqtt
     logging.info("Connected...")
     logging.debug(paho.connack_string(rc))
 
     if rc == 0:
-        counter = 0
-        logging.debug("Subscribing to \"%s\"", subTopic)
-        client.subscribe(subTopic)  # subscribe
+        mqtt["counter"] = 0
+        logging.debug("Subscribing to \"%s\"", mqtt["subTopic"])
+        client.subscribe(mqtt["subTopic"])  # subscribe
     else:
-        if counter < retry:
+        if mqtt["counter"] < mqtt["retry"]:
             logging.debug("Reconnecting...")
-            logging.debug("Waiting %s before retry" % delay)
-            time.sleep(delay)
+            logging.debug("Waiting %s before retry" % mqtt["delay"])
+            time.sleep(mqtt["delay"])
             connect()
         else:
             client.disconnect()
@@ -165,12 +180,12 @@ def on_disconnect(client, userdata, rc=0):
         rc -- the disconnection result. if called by disconnect() rc = 0 MQTT_ERR_SUCCESS
 
     """
-    global counter, delay
-    logging.debug("Disconnected (%s)" % counter)
-    if counter < retry:
+    global mqtt
+    logging.debug("Disconnected (%s)" % mqtt["counter"])
+    if mqtt["counter"] < mqtt["retry"]:
         logging.info("Reconnecting...")
-        logging.debug("Waiting %s before retry" % delay)
-        time.sleep(delay)
+        logging.debug("Waiting %s before retry" % mqtt["delay"])
+        time.sleep(mqtt["delay"])
         connect()
     else:
         client.loop_stop()
@@ -186,18 +201,14 @@ def call_api(msg):
         msg -- the response body from the ajax request
 
     """
+    global mqtt
     logging.debug("Sending API call")
-    request = msg.payload.decode("utf-8")
-logging.debug(request)
-    protocol = "http://"
-    host = "localhost"
-    port = "80"
-    path = "/feed/list.json"
-    parameters = ""
-    apikey = "cb9579be83678b89a5eb0faea08ad839"
+    json_data = json.loads(msg.payload.decode("utf-8"))
+    # merge the default settings with ones passed in the mqtt topic
+    data = {**emoncms, **json_data}
 
-    uri = "%s%s:%s%s?%s&apikey=%s" % protocol, host, port, path, parameters, apikey
-
+    uri = "%s%s:%s%s%s&apikey=%s" % (data["protocol"], data["host"], data["port"], data["path"], data["parameters"], data["apikey"])
+    logging.debug("Sending API request %s" % uri)
     send_response(requests.get(uri))
 
 
@@ -209,14 +220,20 @@ def send_response(response):
         response -- json payload for the mqtt message
 
     """
-    # print(response.json())
-    logging.debug("Sending API response to: \"%s\"" % pubTopic)
-    pub_response = client.publish(
-        pubTopic, json.dumps(response.json()))  # publish
+    global mqtt
+    logging.debug("Sending API response to: \"%s\"" % mqtt["pubTopic"])
+    pub_response = mqtt["client"].publish(
+        mqtt["pubTopic"], json.dumps(response.json()))  # publish
+
     logging.debug("PUBLISHED: %s", paho.error_string(pub_response.rc))
     # pub_response.wait_for_publish()
 
+
 def setTLS(tls_version=None):
+    """ Set the SSL options
+
+    """
+    global mqtt
     if not hasattr(ssl, 'SSLContext'):
         # Require Python version that has SSL context support in standard library
         raise ValueError('Python 2.7.9 and 3.2 are the minimum supported versions for TLS.')
@@ -232,31 +249,30 @@ def setTLS(tls_version=None):
 
     logging.info('-- SETTING TLS settings')
     
-    client.tls_set(ca_certs="/usr/share/ca-certificates/mozilla/DST_Root_CA_X3.crt")
-    # client.tls_set(ca_certs="/home/emrys/tmp/mqtt/certs/mqtt.emoncms.org")
-    # client.tls_set(ca_certs="/home/emrys/tmp/mqtt/certs/mqtt.emoncms.org/fullchain.pem")
-    client.tls_insecure_set(True)
+    mqtt["client"].tls_set(ca_certs="/usr/share/ca-certificates/mozilla/DST_Root_CA_X3.crt")
+    # mqtt["client"].tls_set(ca_certs="/home/emrys/tmp/mqtt/certs/mqtt.emoncms.org")
+    # mqtt["client"].tls_set(ca_certs="/home/emrys/tmp/mqtt/certs/mqtt.emoncms.org/fullchain.pem")
+    mqtt["client"].tls_insecure_set(True)
     
     # @todo get this cert to work!
 
-    # client.tls_set(ca_certs=None,certfile="/home/emrys/.ssh/mqtt/m2mqtt_ca.crt",keyfile=None,cert_reqs=ssl.CERT_NONE,tls_version=ssl.PROTOCOL_TLSv1)
+    # mqtt["client"].tls_set(ca_certs=None,certfile="/home/emrys/.ssh/mqtt/m2mqtt_ca.crt",keyfile=None,cert_reqs=ssl.CERT_NONE,tls_version=ssl.PROTOCOL_TLSv1)
 
 def connect():
     """ calls the mqtt client connection method 
 
         counts number of connection attempts
     """
-    global client, counter, host, port, username, password, tls
-    client.enable_logger(logger=logging)
+    global mqtt
+    mqtt["client"].enable_logger(logger=logging)
 
-    if tls:
+    if mqtt["tls"]:
         context = setTLS()
 
-    logging.debug("Attempt %s" % counter)
-    counter += 1
-    client.username_pw_set(username, password)
-    client.connect(host, port, 60)  # connect
-
+    logging.debug("Attempt %s" % mqtt["counter"])
+    mqtt["counter"] += 1
+    mqtt["client"].username_pw_set(mqtt["username"], mqtt["password"])
+    mqtt["client"].connect(mqtt["host"], mqtt["port"], 60)  # connect
 
 
 

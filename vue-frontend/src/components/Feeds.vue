@@ -27,6 +27,8 @@
     ></Node>
   </div>
 
+{{ this.mqtt.lastMessage }}
+
 </div>
 
 </template>
@@ -36,6 +38,8 @@ import FeedTooltip from '@/components/FeedTooltip'
 import Node from '@/components/Node'
 import camelCase from 'camelcase'
 import jsonSize from 'json-size'
+import { mapState } from 'vuex'
+import { mqtt } from '@/components/mixins/mqtt' // eslint-disable-line no-unused-vars, no-undef
 
 export default {
   name: 'Feeds',
@@ -44,7 +48,7 @@ export default {
     'FeedTooltip': FeedTooltip,
     'Node': Node
   },
-  props: ['app'],
+  mixins: [mqtt],
   data () {
     return {
       msg: 'Feeds List',
@@ -67,36 +71,6 @@ export default {
         MYSQLMEMORY: 8, // Mysql with MEMORY tables on RAM. All data is lost on shutdown
         REDISBUFFER: 9, // (internal use only) Redis Read/Write buffer , for low write mode
         CASSANDRA: 10 // Cassandra
-      }
-    }
-  },
-  computed: {
-    getEngineName: function () {
-      return function (_id) {
-        let engineName = null
-        Object.entries(this.engines).forEach(function (value, id) {
-          if (id === parseInt(_id)) {
-            engineName = value[0]
-          }
-        })
-        return engineName
-      }
-    },
-    username: function () {
-      return this.$root.$data.auth.user.username || JSON.parse(localStorage.getItem('user')).username
-    },
-    pubTopic: function () {
-      return `user/${this.username}/response`
-    },
-    subTopic: function () {
-      return `user/${this.username}/request`
-    },
-    status: {
-      get: function () {
-        return this.$root.$data.mqtt.status
-      },
-      set: function (newVal) {
-        this.$root.$data.mqtt.status.push(JSON.stringify(newVal))
       }
     }
   },
@@ -124,60 +98,67 @@ export default {
       }
     }
   },
+  computed: {
+    getEngineName: function () {
+      return function (_id) {
+        let engineName = null
+        Object.entries(this.engines).forEach(function (value, id) {
+          if (id === parseInt(_id)) {
+            engineName = value[0]
+          }
+        })
+        return engineName
+      }
+    },
+    message: function (topic, message) {
+      return this.mqtt.lastMessage
+    },
+    username: function () {
+      return this.auth.user.username
+    },
+    pubTopic: function () {
+      return `user/${this.username}/request`
+    },
+    subTopic: function () {
+      return `user/${this.username}/response`
+    },
+    connected: function () {
+      return this.mqtt.connected
+    },
+    status: {
+      get: function () {
+        return this.mqtt.status
+      },
+      set: function (newVal) {
+        this.mqtt.status.push(JSON.stringify(newVal))
+      }
+    },
+    ...mapState(['lang', 'auth', 'mqtt'])
+  },
+
   methods: {
     publish: function () {
-      if (this.$root.$data.mqtt.connected) {
+      if (this.mqtt.connected) {
         let params = {
-          port: 80
+          path: '/emoncms/feed/list.json'
         }
-        this.$root.$data.mqtt.client.publish(this.pubTopic, params)
-        this.$root.$data.mqtt.status.push('publishing ' + JSON.stringify(params) + ' to ' + this.pubTopic)
-        this.$root.$data.mqtt.connected = true
+        this.status.push('publishing ' + JSON.stringify(params) + ' to ' + this.pubTopic)
+        this.mqtt.client.publish(this.pubTopic, JSON.stringify(params))
       }
     },
     subscribe: function () {
-      if (this.$root.$data.mqtt.connected) {
-        this.$root.$data.mqtt.status.push(`subscribing to topic: user/${this.$root.$data.auth.user.username}/response`)
-        this.$root.$data.mqtt.client.subscribe(`user/${this.$root.$data.auth.user.username}/response`)
+      if (this.mqtt.connected) {
+        this.status.push(`subscribing to topic: ${this.subTopic}`)
+        this.mqtt.client.subscribe(`${this.subTopic}`)
+      } else {
+        this.connect()
       }
     },
     disconnect: function () {
-      // @todo: this should unsubscribe and disconnect from subClient & pubClient
-      let that = this
-      var options = {
-        onSuccess: function () {
-          that.$root.$data.mqtt.subscribed = false
-        }
-      }
-      if (this.$root.$data.mqtt.client) {
-        this.$root.$data.mqtt.client.unsubscribe(this.$root.$data.mqtt.pubTopic, options)
-        this.$root.$data.mqtt.client.disconnect()
-        this.$root.$data.mqtt.disconnect()
-      }
-    },
-    onConnect: function (connack) {
-      this.$root.$data.mqtt.connected = true
-      this.$root.$data.mqtt.status.push('connected to broker', connack)
-      if (connack.returnCode > 0) {
-        this.$root.$data.mqtt.status.push('unable to connect to: ' + this.$root.$data.mqtt.pubTopic)
-        this.$root.$data.mqtt.connected = false
-      } else {
-        this.$root.$data.mqtt.connected = true
-        this.subscribe()
-        this.publish()
-      }
-    },
-    onDisconnect: function (connack) {
-      this.$root.$data.mqtt.status.push('disconnect callback', connack)
-      if (connack.returnCode > 0) {
-        this.$root.$data.mqtt.status.push('unable to disconnect to: ' + this.$root.$data.mqtt.pubTopic)
-        this.$root.$data.mqtt.connected = true
-      } else {
-        this.$root.$data.mqtt.connected = false
-      }
+      this.mqtt.client.disconnect()
     },
     onMessage: function (topic, message) {
-      this.$root.$data.mqtt.status.push('data received from: " ' + topic + '" (' + Number(jsonSize(message) / 1024).toFixed(2) + 'KB)')
+      this.status.push('data received from: " ' + this.subTopic + '" (' + Number(jsonSize(message) / 1024).toFixed(2) + 'KB) | ' + new Date().toLocaleTimeString())
       this.processData(JSON.parse(message.toString()))
     },
     isSelected: function (feedId) {
@@ -245,11 +226,7 @@ export default {
     getFeedData: function () {
       this.errors = []
       // start it all off by sending the request to the mqtt server
-      if (!this.$root.$data.mqtt.subscribed) {
-        this.mqtt_connect()
-      } else {
-        this.publish()
-      }
+      this.publish()
     }
   },
   watch: {
@@ -266,9 +243,22 @@ export default {
           that.publish()
         }, this.autoreloadDelay)
       }
+    },
+    connected: function (isConnected) {
+      if (isConnected) {
+        this.subscribe() // only subscribe once
+        this.getFeedData() // publish to request topic to allow python script to process local input
+      } else {
+        this.disconnect()
+      }
+    },
+    message: function (message) {
+      this.onMessage(message)
     }
   },
   mounted () {
+    this.client.on('connect', this.onConnect)
+
     if (!this.getFeedData()) {
       // data not available - wait before retry
       let that = this

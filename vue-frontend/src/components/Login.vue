@@ -32,32 +32,54 @@
                 <button type="submit" class="btn btn-primary">Login</button>
                 </div>
             </form>
-
         </div>
     </div>
 </template>
 
 <script>
 import { mapState } from 'vuex'
-import { auth } from '@/components/mixins/authenticate' // eslint-disable-line no-unused-vars, no-undef
 import { mqtt } from '@/components/mixins/mqtt' // eslint-disable-line no-unused-vars, no-undef
+import { auth } from '@/components/mixins/authenticate' // eslint-disable-line no-unused-vars, no-undef
 
 export default {
   name: 'Login',
   mixins: [auth, mqtt],
-  computed: mapState(['lang', 'auth', 'mqtt']),
+  computed: {
+    client: {
+      get: function () {
+        return this.mqtt.client
+      },
+      set: function (newVal) {
+        this.mqtt.client = newVal
+      }
+    },
+    status: {
+      get: function () {
+        return this.mqtt.status
+      },
+      set: function (newVal) {
+        this.$store.commit('status', newVal)
+      }
+    },
+    ...mapState(['lang', 'auth', 'mqtt'])
+  },
+  methods: {},
   i18n: {
     messages: {
-      en: { message: {
-        login: 'Login to ',
-        username: 'Username ',
-        password: 'Password '
-      }},
-      cy: { message: {
-        login: 'Mewngofnodi i ',
-        username: 'Cyfrif',
-        password: 'Cyfrinair'
-      }}
+      en: {
+        message: {
+          login: 'Login to ',
+          username: 'Username ',
+          password: 'Password '
+        }
+      },
+      cy: {
+        message: {
+          login: 'Mewngofnodi i ',
+          username: 'Cyfrif',
+          password: 'Cyfrinair'
+        }
+      }
     }
   }
 }
